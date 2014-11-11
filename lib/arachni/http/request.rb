@@ -2,6 +2,8 @@ module Arachni
 module HTTP
 class Request
 
+    attr_accessor :coverage
+
     def run
         response = nil
         @on_complete = [proc{ |r| response = r }]
@@ -13,7 +15,10 @@ class Request
         response
     end
 
-end
-end
-end
+    def to_h
+        super.merge( coverage: coverage )
+    end
 
+end
+end
+end

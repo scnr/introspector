@@ -1,4 +1,3 @@
-require 'coverage'
 require 'arachni/introspector'
 require 'rack'
 require 'stringio'
@@ -41,7 +40,6 @@ class <<self
         @options = options
         @options[:address]  = options[:Host] || default_host
         @options[:port]   ||= options[:Port] || 8080
-        @options[:trace]  ||= false
 
         @app    = app
         @server = Server.new( options ) do |response|
@@ -58,6 +56,7 @@ class <<self
 
         @thread = Thread.new do
             run( *args, &block )
+            @thread = nil
         end
 
         sleep 0.1 while !running?
@@ -66,7 +65,7 @@ class <<self
     end
 
     def thread
-        Thread.current
+        @thread
     end
 
     def running?
@@ -140,18 +139,19 @@ class <<self
             'rack.multiprocess' => false,
             'rack.run_once'     => false,
             'rack.url_scheme'   => 'http',
-            'rack.hijack?'      => false,
-            'arachni.request'   => request
+            'rack.hijack?'      => false
         )
 
         body    = ''
         headers = {}
         begin
-            t = trace do
-                response.code, headers, body = @app.call( environment )
-            end
+            app_call = proc { response.code, headers, body = @app.call( environment ) }
 
-            # ap t
+            if @options[:coverage]
+                request.coverage = Arachni::Introspector::Coverage.new( @options[:coverage], &app_call )
+            else
+                app_call.call
+            end
 
             body = '' if !body
 
@@ -176,28 +176,6 @@ class <<self
         end
     ensure
         body.close if body.respond_to? :close
-    end
-
-    def trace(&block)
-        if !@options[:trace]
-            block.call
-            return []
-        end
-
-        t = []
-        TracePoint.new do |tp|
-            next if @options[:trace_filter] && !@options[:trace_filter].call( tp )
-
-            t << {
-                path:        tp.path,
-                line_number: tp.lineno,
-                class:       tp.defined_class,
-                method_name: tp.method_id,
-                event:       tp.event,
-                timestamp:   Time.now
-            }
-        end.enable(&block)
-        t
     end
 
 end
