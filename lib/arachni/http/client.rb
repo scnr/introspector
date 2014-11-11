@@ -61,7 +61,7 @@ class Client
 
         request.handle_response response
 
-        true
+        false
     end
 
 end
