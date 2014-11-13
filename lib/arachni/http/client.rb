@@ -47,6 +47,8 @@ class Client
         response = Response.new( url: request.url, request: request )
         response.redirections ||= []
 
+        # Hate this, Timeout.timeout uses a thread which introduces a noticeable
+        # overhead.
         begin
             t = Time.now
             Timeout.timeout request.timeout do
