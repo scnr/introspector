@@ -5,6 +5,7 @@ gem 'binding_of_caller'
 gem 'arachni', path: '../arachni/'
 
 group :prof do
+    gem 'sys-proctable'
     gem 'ruby-prof'
     gem 'stackprof'
     gem 'ruby-mass'
