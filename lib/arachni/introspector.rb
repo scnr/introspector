@@ -12,15 +12,15 @@ module Introspector
 
     class<<self
 
-        def scan_in_thread( *args, &block )
-            s = Scan.new( *args, &block )
-            s.start_in_thread
-            s
-        end
-
         def scan( *args, &block )
             s = Scan.new( *args, &block )
             s.start
+            s
+        end
+
+        def scan_in_thread( *args, &block )
+            s = Scan.new( *args, &block )
+            s.start_in_thread
             s
         end
 
@@ -28,6 +28,10 @@ module Introspector
             report = nil
             Scan.new( *args ) { |s| report = s.report }
             report
+        end
+
+        def recheck_issue( app, issue, options = {} )
+            Scan.new( app, options ).recheck_issue( issue )
         end
 
         def os

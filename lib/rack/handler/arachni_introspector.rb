@@ -74,7 +74,10 @@ class <<self
 
     # Shuts down the server.
     def shutdown
-        @server.stop
+        @thread.kill if @thread
+        @thread = nil
+        @server.stop if @server
+        @server = nil
     end
 
     private

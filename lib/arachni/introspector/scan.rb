@@ -41,6 +41,13 @@ class Scan
         start( &block ) if block_given?
     end
 
+    def recheck_issue( issue )
+        start_app
+        issue.recheck
+    ensure
+        stop_app
+    end
+
     def start( &block )
         return false if @framework
 
@@ -130,8 +137,8 @@ class Scan
         path = @options[:path].to_s
         path = "/#{path}" if !path.start_with?( '/' )
 
-        @checks  = options.delete(:checks)   || DEFAULT_CHECKS
-        @plugins = options.delete(:plugins)  || []
+        @checks  = options.delete(:checks)  || DEFAULT_CHECKS
+        @plugins = options.delete(:plugins) || {}
 
         Options.update options
 
@@ -150,7 +157,7 @@ class Scan
         UNLOAD_CHECKS.each { |c| f.checks.unload c }
 
         f.plugins.load_defaults
-        f.plugins.load @plugins
+        f.plugins.load @plugins.keys
         UNLOAD_PLUGINS.each { |c| f.plugins.unload c }
 
         @framework = f
