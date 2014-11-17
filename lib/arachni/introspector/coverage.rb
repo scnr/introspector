@@ -43,6 +43,8 @@ class Coverage
 
     def marshal_load( h )
         h.each { |k, v| instance_variable_set( "@#{k}", v ) }
+        points.each { |point| point.coverage = self }
+        self
     end
 
     private

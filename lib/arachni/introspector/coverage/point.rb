@@ -5,21 +5,45 @@ module Arachni
 module Introspector
 class Coverage
 
+# Coverage point, similar in function to a native Ruby TracePoint.
+# Points to a covered code execution {#event}.
 class Point
 
-    attr_reader :id
-    attr_reader :stack_frame
+    # @return   [Integer]
+    #   Unique ID.
+    attr_reader   :id
 
+    # @return   [Coverage]
+    #   Parent coverage.
     attr_accessor :coverage
+
+    # @return   [String,nil]
+    #   Path to the source file, `nil` if no file is available (i.e. compiled code).
     attr_accessor :path
+
+    # @return   [Integer,nil]
+    #   File line number, `nil` if no {#file} is available (i.e. compiled code).
     attr_accessor :line_number
+
+    # @return   [String]
+    #   Class name containing the point.
     attr_accessor :class_name
+
+    # @return   [Symbol]
+    #   Name of method associated with the {#event}.
     attr_accessor :method_name
+
+    # @return   [Symbol]
+    #   Event name.
     attr_accessor :event
+
+    # @return   [Time]
+    #   Time of logging.
     attr_accessor :timestamp
 
+    # @param    [Hash]  options
     def initialize( options = {} )
-        @id ||= self.class.increment_id
+        @id = self.class.increment_id
 
         options.each do |k, v|
             send( "#{k}=", v )
@@ -28,10 +52,14 @@ class Point
         stack_frame
     end
 
+    # @return   [StackFrame]
+    #   Associated stack-frame.
     def stack_frame
         @stack_frame ||= StackFrame.new( self )
     end
 
+    # @return   [Binding]
+    #   Associated binding.
     def context
         self.class.bindings[@id]
     end
@@ -66,15 +94,28 @@ class Point
     end
 
     class <<self
+
+        # Provides out-of-instance storage for non-serializable bindings.
+        #
+        # @private
         def bindings
             @bindings ||= {}
         end
 
+        # Increments the {Point#id} to be used for the next instance.
+        #
+        # @private
         def increment_id
             @id ||= 0
             @id += 1
         end
 
+        # @param    [TracePoint]    tp
+        #   Ruby TracePoint object.
+        # @param    [Hash]  options
+        #   Options for {#new}, will override the `tp` data.
+        #
+        # @return   [Point]
         def from_trace_point( tp, options = {} )
             defined_class =
                 (tp.defined_class.is_a?( Class ) || tp.defined_class.is_a?( Module ) ?
