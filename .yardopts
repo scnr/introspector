@@ -1,0 +1,9 @@
+--no-private
+--markup=markdown
+--verbose
+--title "Arachni Introspector"
+lib/**/*.rb
+rack/**/*.rb
+-
+CHANGELOG.md
+LICENSE.txt

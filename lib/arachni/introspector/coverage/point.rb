@@ -22,7 +22,7 @@ class Point
     attr_accessor :path
 
     # @return   [Integer,nil]
-    #   File line number, `nil` if no {#file} is available (i.e. compiled code).
+    #   File line number, `nil` if no file is available (i.e. compiled code).
     attr_accessor :line_number
 
     # @return   [String]
@@ -113,7 +113,7 @@ class Point
         # @param    [TracePoint]    tp
         #   Ruby TracePoint object.
         # @param    [Hash]  options
-        #   Options for {#new}, will override the `tp` data.
+        #   Options for {#initialize}, will override the `tp` data.
         #
         # @return   [Point]
         def from_trace_point( tp, options = {} )

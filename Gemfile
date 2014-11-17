@@ -2,7 +2,10 @@ source 'https://rubygems.org'
 
 gem 'binding_of_caller'
 
-gem 'arachni', path: '../arachni/'
+group :docs do
+    gem 'yard'
+    gem 'redcarpet'
+end
 
 group :spec do
     gem 'simplecov', require: false, group: :test
@@ -17,5 +20,7 @@ group :prof do
     gem 'stackprof'
     gem 'ruby-mass'
 end
+
+gem 'arachni', path: '../arachni/'
 
 gemspec
