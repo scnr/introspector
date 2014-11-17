@@ -7,37 +7,57 @@ class Point
 
 class StackFrame
 
+    # @return   [Point]
+    #   Parent {Point}.
     attr_accessor :point
 
+    # @note {#callers} will be captured at this point to avoid losing references
+    #   to them due to the stackframe being popped during code execution.
+    #
+    # @param   [Point]  point
+    #   Parent {Point}.
     def initialize( point )
-        @point   = point
+        @point = point
         self.class.callers[@point.id] ||= @point.context.callers
     end
 
+    # @return   [Array<Binding>]
+    #   Bindings of previous stack frames.
     def callers
         self.class.callers[@point.id]
     end
 
+    # @return (see Point#context)
     def context
         point.context
     end
 
+    # @param   [String]    code
+    #   Code to execute under the {#context} of the frame.
     def eval( code )
         context.eval( code )
     end
 
+    # @return   [Array]
+    #   Location and line number of the {#container_method}.
     def method_definition
         @method_definition ||= eval( 'method(__method__).source_location' ) rescue nil
     end
 
-    def inside_method
+    # @return   [Symbol,nil]
+    #   Name of the method to which the {#context} belongs.
+    def container_method
         @inside_method ||= eval( '__method__' )
     end
 
+    # @return   [Object]
+    #   {#context} `self`.
     def object
         eval( 'self' )
     end
 
+    # @return   [Hash]
+    #   Local variables under the {#context}.
     def local_variables
         return {} if !context
 
@@ -50,6 +70,8 @@ class StackFrame
         end
     end
 
+    # @return   [Hash]
+    #   Instance variables of {#object}.
     def instance_variables
         return {} if !context
 
@@ -61,8 +83,8 @@ class StackFrame
     def inspect
         s = "#{object.class}"
 
-        return s if !inside_method
-        s << "##{inside_method}"
+        return s if !container_method
+        s << "##{container_method}"
 
         mp, ml = method_definition || []
         return s if !ml
@@ -71,6 +93,10 @@ class StackFrame
     end
 
     class <<self
+
+        # Provides out-of-instance storage for non-serializable bindings.
+        #
+        # @private
         def callers
             @callers ||= {}
         end

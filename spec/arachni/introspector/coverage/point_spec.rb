@@ -1,8 +1,3 @@
-class Foo
-    def stuff
-    end
-end
-
 describe Arachni::Introspector::Coverage::Point do
     subject { Arachni::Introspector::Coverage::Point.new( data ) }
     let(:data) { Factory[:point_data] }
@@ -57,8 +52,7 @@ describe Arachni::Introspector::Coverage::Point do
             end.enable{}
 
             checked = false
-            TracePoint.new do |tp|
-                next if !tp.defined_class
+            get_trace_point :call do |tp|
                 checked = true
 
                 point = described_class.from_trace_point( tp )
@@ -70,8 +64,6 @@ describe Arachni::Introspector::Coverage::Point do
                 expect(point.event).to eq tp.event
                 expect(point.context).to be_kind_of Binding
                 expect(point.timestamp).to be_kind_of Time
-            end.enable do
-                Foo.new.stuff
             end
 
             expect(checked).to be_truthy
