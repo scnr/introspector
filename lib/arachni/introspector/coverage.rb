@@ -17,6 +17,7 @@ class Coverage
         end
 
         @points ||= []
+        @scope  ||= {}
 
         trace( &block ) if block_given?
     end
