@@ -5,6 +5,7 @@ module Arachni
 module Introspector
 
     require 'arachni/introspector/version'
+    require 'arachni/introspector/error'
     require 'arachni/introspector/coverage'
     require 'arachni/introspector/scan'
     require_relative 'http/client'

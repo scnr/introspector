@@ -4,7 +4,7 @@ module Introspector
 class Scan
     extend Forwardable
 
-    class Error < Arachni::Error
+    class Error < Introspector::Error
         class Inactive < Error
         end
     end

@@ -1,45 +1,57 @@
 require 'coverage'
 require 'arachni/introspector/coverage/point'
+require 'arachni/introspector/coverage/scope'
 
 module Arachni
 module Introspector
 
 class Coverage
 
+    class Error < Introspector::Error
+        class InvalidScope < Error
+        end
+    end
+
+    # @return   [Scope]
     attr_accessor :scope
 
     # @return   [Array<Point>]
-    attr_accessor :points
+    attr_reader   :points
 
     def initialize( options = {}, &block )
-        options.each do |k, v|
-            send( "#{k}=", v )
+        options = options.dup
+
+        if (scope = options.delete(:scope)).is_a? Scope
+            @scope = scope
+        elsif scope.is_a? Hash
+            @scope = Scope.new( scope )
+        elsif scope.nil?
+            @scope = Scope.new
+        else
+            fail Error::InvalidScope
         end
 
-        @points ||= []
-        @scope  ||= {}
+        @points = []
 
         trace( &block ) if block_given?
     end
 
     def trace( &block )
         TracePoint.new do |tp|
-            next if !log_point?( tp )
+            next if @scope.out?( tp )
 
             @points << create_point_from_trace_point( tp )
         end.enable(&block)
+
+        self
     end
 
     def marshal_dump
-        scope = @scope.dup
-        @scope.delete :filter
-
         instance_variables.inject( {} ) do |h, iv|
+            next h if iv == :@scope
             h[iv.to_s.gsub('@','')] = instance_variable_get( iv )
             h
         end
-    ensure
-        @scope = scope
     end
 
     def marshal_load( h )
@@ -52,34 +64,6 @@ class Coverage
 
     def create_point_from_trace_point( tp )
         Point.from_trace_point( tp, coverage: self )
-    end
-
-    def log_point?( point )
-        if @scope[:path_start_with]
-            return point.path.to_s.start_with?( @scope[:path_start_with] )
-        end
-
-        if @scope[:path_end_with]
-            return point.path.to_s.end_with?( @scope[:path_end_with] )
-        end
-
-        if @scope[:path_include_patterns]
-            @scope[:path_include_patterns].each do |pattern|
-                return true if point.path =~ pattern
-            end
-
-            return false
-        end
-
-        if @scope[:path_exclude_patterns]
-            @scope[:path_exclude_patterns].each do |pattern|
-                return false if point.path =~ pattern
-            end
-        end
-
-        return @scope[:filter].call( point ) if @scope[:filter]
-
-        true
     end
 
 end
