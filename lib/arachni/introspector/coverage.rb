@@ -18,6 +18,16 @@ class Coverage
     # @return   [Array<Point>]
     attr_reader   :points
 
+    # @param    [Hash]  options
+    # @option   options     [Scope,Hash,nil]    :scope
+    #   * {Scope}:  Configured {Scope} to use.
+    #   * `Hash`:  `Hash` to use for {Scope#initialize}.
+    #   * `nil`:  Will default to an empty {Scope}.
+    # @param    [Block] block
+    #   Code to {#trace}.
+    #
+    # @raise    [Error::InvalidScope]
+    #   On unsupported `:scope` option.
     def initialize( options = {}, &block )
         options = options.dup
 
@@ -36,6 +46,13 @@ class Coverage
         trace( &block ) if block_given?
     end
 
+    # Traces code execution events as {Point points} and populates {#points}.
+    #
+    # @param    [Block] block
+    #   Code to trace.
+    #
+    # @return   [Coverage]
+    #   `self`
     def trace( &block )
         TracePoint.new do |tp|
             next if @scope.out?( tp )
