@@ -18,7 +18,7 @@ class StackFrame
     #   Parent {Point}.
     def initialize( point )
         @point = point
-        self.class.callers[@point.id] ||= @point.context.callers
+        self.class.callers[@point.id] ||= @point.context.callers if @point.context
     end
 
     # @return   [Array<Binding>]
