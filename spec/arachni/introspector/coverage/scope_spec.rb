@@ -2,6 +2,51 @@ describe Arachni::Introspector::Coverage::Scope do
     subject { described_class.new }
     let(:point) { point = Class.new }
 
+    describe '#empty?' do
+        context 'when the scope has not been configured' do
+            it 'returns true' do
+                expect(subject).to be_empty
+            end
+        end
+
+        context 'when the scope has been configured with' do
+            context '#path_start_with' do
+                it 'returns false' do
+                    subject.path_start_with = 's'
+                    expect(subject).to_not be_empty
+                end
+            end
+
+            context '#path_end_with' do
+                it 'returns false' do
+                    subject.path_end_with = 's'
+                    expect(subject).to_not be_empty
+                end
+            end
+
+            context '#path_include_patterns' do
+                it 'returns false' do
+                    subject.path_include_patterns = [/stuff/]
+                    expect(subject).to_not be_empty
+                end
+            end
+
+            context '#path_exclude_patterns' do
+                it 'returns false' do
+                    subject.path_exclude_patterns = [/stuff/]
+                    expect(subject).to_not be_empty
+                end
+            end
+
+            context '#filter' do
+                it 'returns false' do
+                    subject.filter = proc {}
+                    expect(subject).to_not be_empty
+                end
+            end
+        end
+    end
+
     describe '#out?' do
         context 'when #in?' do
             context 'returns true' do

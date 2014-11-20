@@ -12,11 +12,11 @@ class Scope
     #   Include trace points whose file path ends with this string.
     attr_accessor :path_end_with
 
-    # @return   [Array<Regexp>,nil]
+    # @return   [Array<Regexp>]
     #   Include trace points whose file path matches this pattern.
     attr_accessor :path_include_patterns
 
-    # @return   [Array<Regexp>,nil]
+    # @return   [Array<Regexp>]
     #   Exclude trace points whose file path matches this pattern.
     attr_accessor :path_exclude_patterns
 
@@ -31,6 +31,16 @@ class Scope
         options.each do |k, v|
             send( "#{k}=", v )
         end
+
+        @path_include_patterns ||= []
+        @path_exclude_patterns ||= []
+    end
+
+    # @return   [Bool]
+    #   `true` if scope has no configuration, `false` otherwise.
+    def empty?
+        !@path_start_with && !@path_end_with && @path_include_patterns.empty? &&
+            @path_exclude_patterns.empty? && !@filter
     end
 
     # @param    [TracePoint]    point
@@ -58,7 +68,7 @@ class Scope
             return point.path.to_s.end_with?( @path_end_with )
         end
 
-        if @path_include_patterns
+        if @path_include_patterns.any?
             @path_include_patterns.each do |pattern|
                 return true if point.path =~ pattern
             end
@@ -66,7 +76,7 @@ class Scope
             return false
         end
 
-        if @path_exclude_patterns
+        if @path_exclude_patterns.any?
             @path_exclude_patterns.each do |pattern|
                 return false if point.path =~ pattern
             end
