@@ -14,21 +14,34 @@ module Introspector
     class<<self
 
         def scan( *args, &block )
-            s = Scan.new( *args, &block )
+            s = Scan.new( *args )
             s.start
+
+            if block_given?
+                r = nil
+                begin
+                    r = block.call( s )
+                ensure
+                    s.clean_up
+                end
+
+                return r
+            end
+
             s
         end
 
         def scan_in_thread( *args, &block )
-            s = Scan.new( *args, &block )
-            s.start_in_thread
+            s = Scan.new( *args )
+            s.start_in_thread(&block)
             s
         end
 
         def scan_and_report( *args )
-            report = nil
-            Scan.new( *args ) { |s| report = s.report }
-            report
+            s = Scan.new( *args )
+            s.report
+        ensure
+            s.clean_up
         end
 
         def recheck_issue( app, issue, options = {} )

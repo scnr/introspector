@@ -1,3 +1,5 @@
+require 'rack/handler/arachni_introspector'
+
 module Arachni
 module Introspector
 
@@ -6,6 +8,12 @@ class Scan
 
     class Error < Introspector::Error
         class Inactive < Error
+        end
+
+        class Dirty < Error
+        end
+
+        class StillRunning < Error
         end
     end
 
@@ -20,27 +28,43 @@ class Scan
 
     DEFAULT_CHECKS = [
         '*'
-    ] + UNLOAD_CHECKS.map { |s| "-#{s}" }
+    ]
 
     DEFAULT_ELEMENTS = [
         :links, :forms, :cookies
     ]
 
+    # @return   [Arachni::Framework]
     attr_reader :framework
+
+    # @return   [#call]
+    #   Rack app.
     attr_reader :app
 
-    def initialize( app, options = {}, &block )
+    # @param    [#call] app
+    #   Rack app.
+    # @param    [Hash]  options
+    # @option  options  [String]    :host
+    #   Hostname to use -- defaults to `app` name.
+    # @option  options  [String]    :port   (80)
+    #   Port number to use.
+    # @option  options  [Hash]    :framework
+    #   {Arachni::Framework} options for {Arachni::Options#update}.
+    def initialize( app, options = {} )
         @app     = app
-        @options = options
+        @options = options.dup
 
         @host = @options[:host] || @app.to_s.downcase.gsub( '::', '-' )
         @port = @options[:port] || 80
 
-        set_framework_options( @options.delete(:framework) || {} )
-
-        start( &block ) if block_given?
+        set_options
+        set_framework
     end
 
+    # @param    [Arachni::Issue]    issue
+    #   Issue to recheck.
+    # @return   [Arachni::Issue]
+    #   Reproduced issue.
     def recheck_issue( issue )
         start_app
         issue.recheck
@@ -48,82 +72,105 @@ class Scan
         stop_app
     end
 
-    def start( &block )
-        return false if @framework
+    # @note **Do not** forget to call {#clean_up} once you have finished
+    #   working with the scan. You probably want to grab the {#report} and
+    #   {#clean_up} right after. Alternatively, use one of the {Introspector}
+    #   helper methods.
+    #
+    # Starts the scan.
+    #
+    # @raise    [Error::Dirty]
+    #   If the scan has already been used.
+    def start
+        fail_if_still_running
+        fail_if_dirty
+
+        @active = true
 
         start_app
 
-        if block_given?
-            Arachni::Framework.new do |f|
-                configure_framework( f ).run
-                block.call self
-            end
-        else
-            configure_framework( Arachni::Framework.new ).run
-        end
-
-        true
+        @framework.run
     ensure
         stop_app
     end
 
-    def start_in_thread
-        return if @framework
+    # Starts the scan in a {#thread} and blocks until it starts.
+    #
+    # @param    [Block] block
+    #   Block to be called and passed `self` at the end of the scan.
+    #
+    # @return   [Thread]
+    #   Scan {#thread}.
+    def start_in_thread( &block )
+        fail_if_dirty
 
         @thread = Thread.new do
             start
+            block.call( self ) if block_given?
             @thread = nil
         end
 
-        sleep 0.1 while !@framework
+        sleep 0.1 while !running?
         @thread
     end
 
+    # @return   [Thread,nil]
+    #   Scan thread if {#start_in_thread} was used to start the scan and the
+    #   scan hasn't yet finished.
     def thread
         @thread
     end
 
+    # Signals the scan to abort and blocks until then.
+    #
+    # @raise    [Error::Inactive]
     def abort
-        fail Error::Inactive if !@framework
-
         @framework.abort
         stop_app
     end
 
+    # @note **Has** to be called after each scan is done.
+    #
+    # Cleans up the entire environment, unloading components and clearing
+    # state and data.
+    #
+    # @raise    [Error::StillRunning]
     def clean_up
-        fail Error::Inactive if !@framework
+        fail_if_still_running
 
         @framework.reset
         stop_app
     end
 
     [:report, :statistics, :status_messages, :sitemap, :status, :running?,
-     :scanning?, :paused?, :pause?, :pausing?, :aborted?,
-     :abort?, :aborting?, :suspend, :suspend?, :suspended?, :snapshot_path,
-     :restore].each do |m|
+     :scanning?, :paused?, :pause?, :pausing?, :aborted?, :abort?, :aborting?,
+     :suspend, :suspend?, :suspended?, :snapshot_path, :restore].each do |m|
         define_method m do |*args|
-            fail Error::Inactive if !@framework
             @framework.send m, *args
         end
     end
 
     def pause
-        fail Error::Inactive if !@framework
         @framework.pause :introspector
     end
 
     def resume
-        fail Error::Inactive if !@framework
         @framework.resume :introspector
     end
 
-    def issues
-        fail Error::Inactive if !@framework
-        return {} if report.issues.empty?
-        report.issues
+    private
+
+    def fail_if_still_running
+        fail Error::StillRunning if running?
     end
 
-    private
+    def fail_if_inactive
+        fail Error::Inactive if !@active
+    end
+
+    def fail_if_dirty
+        fail Error::Dirty if @active
+    end
 
     def start_app
         Rack::Handler::ArachniIntrospector.run_in_thread @app, @options
@@ -133,17 +180,18 @@ class Scan
         Rack::Handler::ArachniIntrospector.shutdown
     end
 
-    def set_framework_options( options )
+    def set_options
         path = @options[:path].to_s
         path = "/#{path}" if !path.start_with?( '/' )
 
-        @checks  = options.delete(:checks)  || DEFAULT_CHECKS
-        @plugins = options.delete(:plugins) || {}
+        options             = @options.delete(:framework) || {}
+        options[:checks]  ||= DEFAULT_CHECKS
+        options[:plugins] ||= {}
 
         Options.update options
 
-        Options.url              ||= "http://#{@host}:#{@port}#{path}"
-        Options.no_fingerprinting  = true
+        Options.url               = "http://#{@host}:#{@port}#{path}"
+        Options.no_fingerprinting = true
         Options.platforms         |= [Introspector.os, :rack, :ruby]
 
         if !Options.audit.links? && !Options.audit.forms? ||
@@ -152,15 +200,17 @@ class Scan
         end
     end
 
-    def configure_framework( f )
-        f.checks.load @checks
-        UNLOAD_CHECKS.each { |c| f.checks.unload c }
+    def set_framework
+        @framework = Arachni::Framework.new
 
-        f.plugins.load_defaults
-        f.plugins.load @plugins.keys
-        UNLOAD_PLUGINS.each { |c| f.plugins.unload c }
+        @framework.checks.load Options.checks
+        UNLOAD_CHECKS.each { |c| @framework.checks.unload c }
 
-        @framework = f
+        @framework.plugins.load_defaults
+        @framework.plugins.load Options.plugins.keys
+        UNLOAD_PLUGINS.each { |c| @framework.plugins.unload c }
+
+        @framework
     end
 
 end
