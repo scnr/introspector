@@ -1,8 +1,17 @@
 describe Arachni::Introspector::Scan do
-    subject { described_class.new( XssApp, options ) }
+    subject { @subject = described_class.new( app, options ) }
     let(:options) { {} }
+    let(:app) { XssApp }
 
-    before { Arachni::Framework.reset }
+    after do
+        if @subject
+            @subject.thread.join if @subject.thread
+            @subject.clean_up
+        end
+
+        Arachni::Framework.reset
+        @subject = nil
+    end
 
     describe '#initialize' do
         it 'sets #app' do
@@ -30,7 +39,7 @@ describe Arachni::Introspector::Scan do
 
             it "sets #{Arachni::Options}" do
                 expect(Arachni::Options).to receive(:update).with(options[:framework])
-                described_class.new( XssApp, options )
+                @subject = described_class.new( app, options )
             end
 
             describe ':host' do
@@ -48,9 +57,10 @@ describe Arachni::Introspector::Scan do
                     let(:options) do
                         {}
                     end
+                    let(:app) { described_class }
 
                     it 'uses the app name' do
-                        expect(described_class.new( described_class ).framework.options.url).to eq 'http://arachni-introspector-scan/'
+                        expect(subject.framework.options.url).to eq 'http://arachni-introspector-scan/'
                     end
                 end
             end
@@ -207,7 +217,7 @@ describe Arachni::Introspector::Scan do
                 subject.start_in_thread do |scan|
                     expect(scan).to be subject
                     expect(subject.status).to be :done
-                end.join
+                end
             end
         end
     end
@@ -238,7 +248,7 @@ describe Arachni::Introspector::Scan do
 
     describe '#abort' do
         it 'aborts a running scan' do
-            subject.start_in_thread
+            t = subject.start_in_thread
             subject.abort
             expect(subject).to be_aborted
         end
@@ -246,8 +256,8 @@ describe Arachni::Introspector::Scan do
 
     describe '#clean_up' do
         it "resets the #{Arachni::Framework}" do
-            expect(subject.framework).to receive(:reset)
-            expect(Rack::Handler::ArachniIntrospector).to receive(:shutdown)
+            expect(subject.framework).to receive(:reset).twice
+            expect(Rack::Handler::ArachniIntrospector).to receive(:shutdown).twice
 
             subject.clean_up
         end
@@ -267,19 +277,20 @@ describe Arachni::Introspector::Scan do
         it 'pauses the scan' do
             subject.pause
             expect(subject).to be_paused
+            subject.resume
         end
     end
 
     describe '#resume' do
         it 'resumes a paused scan' do
-            subject.start_in_thread
+            t = subject.start_in_thread
+
             subject.pause
 
-            sleep 0.1 while !subject.paused?
-
             subject.resume
+            sleep 1 while subject.paused?
 
-            expect(subject).to be_running
+            expect(subject).to_not be_paused
         end
     end
 

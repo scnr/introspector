@@ -102,6 +102,7 @@ class Scan
     # @return   [Thread]
     #   Scan {#thread}.
     def start_in_thread( &block )
+        fail_if_still_running
         fail_if_dirty
 
         @thread = Thread.new do
@@ -110,7 +111,7 @@ class Scan
             @thread = nil
         end
 
-        sleep 0.1 while !running?
+        sleep 0.1 while status == :ready
         @thread
     end
 
@@ -151,17 +152,17 @@ class Scan
     end
 
     def pause
-        @framework.pause :introspector
+        @pause_id = @framework.pause( :introspector )
     end
 
     def resume
-        @framework.resume :introspector
+        @framework.resume @pause_id
     end
 
     private
 
     def fail_if_still_running
-        fail Error::StillRunning if running?
+        fail Error::StillRunning if running? && status != :ready && status != :done
     end
 
     def fail_if_inactive

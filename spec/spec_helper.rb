@@ -102,11 +102,12 @@ RSpec::Core::MemoizedHelpers.module_eval do
 end
 
 # arachni_root_dir = Gem::Specification.find_by_name( 'arachni' ).gem_dir
-# support_path     = "#{arachni_root_dir}/spec/support"
-
-support_path = "#{File.dirname(__FILE__)}/../../arachni/spec/support"
+arachni_root_dir = "#{File.dirname(__FILE__)}/../../arachni/"
+support_path     = "#{arachni_root_dir}/spec/support"
 
 require "#{support_path}/lib/factory"
 Dir.glob( "#{support_path}/{factories}/**/*.rb" ).each { |f| require f }
 
 Dir.glob( "#{File.dirname( __FILE__ )}/support/{lib,helpers,shared,factories}/**/*.rb" ).each { |f| require f }
+
+require "#{arachni_root_dir}/ui/cli/output"
