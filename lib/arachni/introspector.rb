@@ -8,8 +8,8 @@ require 'arachni/introspector/version'
 require 'arachni/introspector/error'
 require 'arachni/introspector/coverage'
 require 'arachni/introspector/scan'
-require_relative 'http/client'
-require_relative 'http/request'
+require 'arachni/introspector/patches/http/client'
+require 'arachni/introspector/patches/http/request'
 
 class<<self
 
