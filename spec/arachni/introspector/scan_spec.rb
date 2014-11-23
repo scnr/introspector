@@ -28,6 +28,24 @@ describe Arachni::Introspector::Scan do
             expect(subject.framework.options.platforms).to include Arachni::Introspector.os
         end
 
+        context 'when the application is using' do
+            context 'ActiveRecord' do
+                it 'detects and sets the DB platform'
+            end
+
+            context 'DataMapper' do
+                it 'detects and sets the DB platform'
+            end
+
+            context 'Mongoid' do
+                it 'detects and sets the DB platform'
+            end
+
+            context 'MongoMapper' do
+                it 'detects and sets the DB platform'
+            end
+        end
+
         describe 'options' do
             let(:options) do
                 {
@@ -148,10 +166,6 @@ describe Arachni::Introspector::Scan do
                 end
             end
         end
-
-        context 'Rails' do
-            it 'is sets the DB platform'
-        end
     end
 
     describe '#start' do
@@ -242,6 +256,25 @@ describe Arachni::Introspector::Scan do
                     subject.start_in_thread.join
                     expect(subject.thread).to be_nil
                 end
+            end
+        end
+    end
+
+    describe '#recheck_issue' do
+        before :all do
+            subject.start
+            @issue = subject.report.issues.first.variations.first
+        end
+
+        context 'when the issue still exists' do
+            it 'returns the reproduced issue' do
+                expect(subject.recheck_issue( @issue )).to eq @issue
+            end
+        end
+
+        context 'when the issue does not still exist' do
+            it 'returns nil' do
+                expect(described_class.new( EmptyApp ).recheck_issue( @issue )).to be_nil
             end
         end
     end

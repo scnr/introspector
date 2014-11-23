@@ -67,7 +67,7 @@ class Scan
     #   Reproduced issue.
     def recheck_issue( issue )
         start_app
-        issue.recheck
+        issue.recheck @framework
     ensure
         stop_app
     end
@@ -139,6 +139,7 @@ class Scan
     def clean_up
         fail_if_still_running
 
+        @framework.clean_up
         @framework.reset
         stop_app
     end
