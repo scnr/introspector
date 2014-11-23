@@ -63,8 +63,8 @@ class Scan
 
     # @param    [Arachni::Issue]    issue
     #   Issue to recheck.
-    # @return   [Arachni::Issue]
-    #   Reproduced issue.
+    # @return   [Arachni::Issue,nil]
+    #   Reproduced issue or `nil` if the issue couldn't be reproduced.
     def recheck_issue( issue )
         start_app
         issue.recheck @framework
@@ -146,7 +146,7 @@ class Scan
 
     [:report, :statistics, :status_messages, :sitemap, :status, :running?,
      :scanning?, :paused?, :pause?, :pausing?, :aborted?, :abort?, :aborting?,
-     :suspend, :suspend?, :suspended?, :snapshot_path, :restore].each do |m|
+     :suspend, :suspend?, :suspended?, :done?, :snapshot_path, :restore].each do |m|
         define_method m do |*args|
             @framework.send m, *args
         end
