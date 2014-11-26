@@ -48,6 +48,25 @@ class Client
     def client_queue( request )
         fail Error::MissingServiceHandler, 'Missing service handler.' if !@service
 
+        original_request = request
+        redirects        = 0
+        while (response = run_request( request )).redirect? &&
+            request.follow_location? &&
+            (original_request.max_redirects && redirects < original_request.max_redirects) do
+
+            request = Request.new(
+                url: [response.headers.location].flatten.first,
+                follow_location: true
+            )
+            redirects += 1
+        end
+
+        original_request.handle_response response
+
+        false
+    end
+
+    def run_request( request )
         response = Response.new( url: request.url, request: request )
         response.redirections ||= []
 
@@ -83,9 +102,7 @@ class Client
             response.headers['content-length'] = response.body.size
         end
 
-        request.handle_response response
-
-        false
+        response
     end
 
     # @param    [String]    str

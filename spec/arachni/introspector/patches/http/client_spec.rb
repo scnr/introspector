@@ -10,7 +10,7 @@ describe Arachni::HTTP::Client do
             Host: 'stuff'
         }
 
-        @url = 'http://stuff/'
+        @url = 'http://stuff'
     end
     before( :each ) do
         @opts.reset
@@ -950,6 +950,7 @@ describe Arachni::HTTP::Client do
                     res = nil
                     subject.request( @url + '/follow_location' ) { |c_res| res = c_res }
                     subject.run
+
                     expect(res.url.start_with?( @url + '/follow_location' )).to be_truthy
                     expect(res.body).to be_empty
                 end
@@ -959,6 +960,7 @@ describe Arachni::HTTP::Client do
                     res = nil
                     subject.request( @url + '/follow_location', follow_location: false ) { |c_res| res = c_res }
                     subject.run
+
                     expect(res.url.start_with?( @url + '/follow_location' )).to be_truthy
                     expect(res.body).to be_truthy
                 end
@@ -968,6 +970,7 @@ describe Arachni::HTTP::Client do
                     res = nil
                     subject.request( @url + '/follow_location', follow_location: true ) { |c_res| res = c_res }
                     subject.run
+
                     expect(res.url).to eq @url + '/redir_2'
                     expect(res.body).to eq 'Welcome to redir_2!'
                 end
