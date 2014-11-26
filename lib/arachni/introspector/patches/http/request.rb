@@ -1,12 +1,27 @@
+require 'base64'
+
 module Arachni
 module HTTP
 class Request
 
     attr_accessor :coverage
 
+    alias :old_prepare_headers :prepare_headers
+
+    def prepare_headers
+        old_prepare_headers
+
+        if (user = (@username || Options.http.authentication_username))
+            if (pass = (@password || Options.http.authentication_password))
+                userpass = Base64.encode64( "#{user}:#{pass}" )
+                headers['Authorization'] = "Basic #{userpass}"
+            end
+        end
+    end
+
     def run
         response = nil
-        @on_complete = [proc{ |r| response = r }]
+        @on_complete << proc{ |r| response = r }
 
         @mode = :async
         Client.queue self

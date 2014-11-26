@@ -1,3 +1,6 @@
+require 'zlib'
+require 'stringio'
+
 module Arachni
 module HTTP
 class Client
@@ -20,16 +23,17 @@ class Client
     end
 
     def max_concurrency=( c )
-        1
+        @max_concurrency = c
     end
 
     def max_concurrency
-        1
+        @max_concurrency
     end
 
     private
 
     def client_initialize
+        @max_concurrency = Options.http.request_concurrency
         true
     end
 
@@ -47,11 +51,13 @@ class Client
         response = Response.new( url: request.url, request: request )
         response.redirections ||= []
 
+        request.prepare_headers
+
         # Hate this, Timeout.timeout uses a thread which introduces a noticeable
         # overhead.
         begin
             t = Time.now
-            Timeout.timeout request.timeout do
+            Timeout.timeout request.timeout.to_i / 1_000.0 do
                 @service.call response
             end
 
@@ -61,9 +67,51 @@ class Client
             response.return_code = :operation_timedout
         end
 
+        response_max_size = Options.http.response_max_size || request.response_max_size
+        if response_max_size && response.body.size > response_max_size
+            response.body = ''
+        end
+
+        case response.headers['content-encoding'].to_s.downcase
+            when 'gzip', 'x-gzip'
+                response.body = unzip( response.body )
+            when 'deflate', 'compress', 'x-compress'
+                response.body = inflate( response.body )
+        end
+
+        if response.headers.delete( 'content-encoding' )
+            response.headers['content-length'] = response.body.size
+        end
+
         request.handle_response response
 
         false
+    end
+
+    # @param    [String]    str
+    #   Inflates `str`.
+    #
+    # @return   [String]
+    #   Inflated `str`.
+    def inflate( str )
+        z = Zlib::Inflate.new
+        s = z.inflate( str )
+        z.close
+        s
+    end
+
+    # @param    [String]    str
+    #   Unzips `str`.
+    #
+    # @return   [String]
+    #   Unziped `str`.
+    def unzip( str )
+        s = ''
+        s.force_encoding( 'ASCII-8BIT' ) if s.respond_to?( :encoding )
+        gz = Zlib::GzipReader.new( StringIO.new( str, 'rb' ) )
+        s << gz.read
+        gz.close
+        s
     end
 
 end
