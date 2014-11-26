@@ -39,7 +39,7 @@ class <<self
 
         @options = options
         @options[:address]  = options[:Host] || default_host
-        @options[:port]   ||= options[:Port] || 8080
+        @options[:port]   ||= options[:Port] || 80
 
         @app    = app
         @server = Server.new( options ) do |response|
@@ -85,7 +85,7 @@ class <<self
     def valid_options
         {
             'Host=HOST' => "Hostname to use (default: #{default_host})",
-            'Port=PORT' => 'Port to use (default: 8080)'
+            'Port=PORT' => 'Port to use (default: 80)'
         }
     end
 
