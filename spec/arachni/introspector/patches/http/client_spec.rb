@@ -461,7 +461,7 @@ describe Arachni::HTTP::Client do
                              },
                              mode:   :sync,
                              method: :post
-            ).request.effective_body).to eq '1=%202&%203=4'
+            ).request.effective_body).to eq '1=+2&+3=4'
         end
 
         describe :response_max_size do
