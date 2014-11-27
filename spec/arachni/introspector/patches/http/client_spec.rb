@@ -307,11 +307,11 @@ describe Arachni::HTTP::Client do
                     end
                 end
                 subject.run
-                expect(called).to be_true
+                expect(called).to be_truthy
 
                 called = false
                 subject.run
-                expect(called).to be_false
+                expect(called).to be_falsey
             end
         end
 
@@ -322,7 +322,7 @@ describe Arachni::HTTP::Client do
                     subject.after_run { called = true }
                 end
                 subject.run
-                expect(called).to be_true
+                expect(called).to be_truthy
             end
         end
     end
