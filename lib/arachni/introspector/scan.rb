@@ -67,6 +67,9 @@ class Scan
     #   Reproduced issue or `nil` if the issue couldn't be reproduced.
     def recheck_issue( issue )
         start_app
+
+        @framework.checks.clear
+
         issue.recheck @framework
     ensure
         stop_app
