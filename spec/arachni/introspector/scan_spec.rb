@@ -3,6 +3,11 @@ describe Arachni::Introspector::Scan do
     let(:options) { {} }
     let(:app) { XssApp }
 
+    before do
+        # No need for browsers in these tests...
+        Arachni::Options.browser_cluster.pool_size = 0
+    end
+
     after do
         if @subject
             @subject.thread.join if @subject.thread
@@ -158,11 +163,16 @@ describe Arachni::Introspector::Scan do
             end
 
             context 'when no elements have been specified' do
-                it 'audits links, forms and cookies' do
-                    expect(subject.framework.options.audit.links?).to be_truthy
-                    expect(subject.framework.options.audit.forms?).to be_truthy
-                    expect(subject.framework.options.audit.cookies?).to be_truthy
-                    expect(subject.framework.options.audit.headers?).to be_falsey
+                [:links, :forms, :cookies, :xmls, :jsons].each do |type|
+                    it "audits #{type}" do
+                        expect(subject.framework.options.audit.element? type).to be_truthy
+                    end
+                end
+
+                [:headers].each do |type|
+                    it "does not audit #{type}" do
+                        expect(subject.framework.options.audit.element? type).to be_falsey
+                    end
                 end
             end
         end
@@ -261,20 +271,21 @@ describe Arachni::Introspector::Scan do
     end
 
     describe '#recheck_issue' do
-        before :all do
-            subject.start
-            @issue = subject.report.issues.first.variations.first
-        end
-
         context 'when the issue still exists' do
             it 'returns the reproduced issue' do
-                expect(subject.recheck_issue( @issue )).to eq @issue
+                subject.start
+                issue = subject.report.issues.first.variations.first
+
+                expect(subject.recheck_issue( @issue )).to eq issue
             end
         end
 
         context 'when the issue does not still exist' do
             it 'returns nil' do
-                expect(described_class.new( EmptyApp ).recheck_issue( @issue )).to be_nil
+                subject.start
+                issue = subject.report.issues.first.variations.first
+
+                expect(described_class.new( EmptyApp ).recheck_issue( issue )).to be_nil
             end
         end
     end

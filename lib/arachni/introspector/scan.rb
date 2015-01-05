@@ -31,7 +31,7 @@ class Scan
     ]
 
     DEFAULT_ELEMENTS = [
-        :links, :forms, :cookies
+        :links, :forms, :cookies, :xmls, :jsons
     ]
 
     # @return   [Arachni::Framework]
@@ -197,7 +197,7 @@ class Scan
 
         Options.url               = "http://#{@host}:#{@port}#{path}"
         Options.no_fingerprinting = true
-        Options.platforms         |= [Introspector.os, :rack, :ruby]
+        Options.platforms        |= [Introspector.os, :rack, :ruby]
 
         if !Options.audit.links? && !Options.audit.forms? ||
             !Options.audit.cookies? || !Options.audit.headers?
