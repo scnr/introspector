@@ -1,6 +1,8 @@
 source 'https://rubygems.org'
 
-gem 'binding_of_caller'
+# This version supports JRuby but JRuby only makes bindings available when in
+# intepreted mode.
+gem 'binding_of_caller', '0.7.3.pre1'#, platform: :ruby
 
 group :docs do
     gem 'yard'
@@ -21,6 +23,8 @@ group :prof do
     gem 'ruby-mass'
 end
 
-gem 'arachni', path: '../arachni/'
+gem 'arachni-reactor', github: 'arachni/arachni-reactor', branch: 'experimental'
+gem 'arachni-rpc',     github: 'arachni/arachni-rpc',     branch: 'experimental'
+gem 'arachni',         path: '../arachni/'
 
 gemspec

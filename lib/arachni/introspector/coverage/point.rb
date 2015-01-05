@@ -1,4 +1,3 @@
-require 'binding_of_caller'
 require 'arachni/introspector/coverage/point/stack_frame'
 
 module Arachni
@@ -52,10 +51,16 @@ class Point
         stack_frame
     end
 
-    # @return   [StackFrame]
-    #   Associated stack-frame.
+    # @return   [StackFrame, nil]
+    #   Associated {StackFrame} or `nil` when not available (when running under
+    #   JRuby, for example).
     def stack_frame
+        return if !context
         @stack_frame ||= StackFrame.new( self )
+    end
+
+    def has_stack_frame?
+        !!stack_frame
     end
 
     # @return   [Binding]
