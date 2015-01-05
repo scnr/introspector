@@ -4,6 +4,9 @@ describe Arachni::Introspector do
     let(:app) { XssApp }
 
     before do
+        # No need for browsers in these tests...
+        Arachni::Options.browser_cluster.pool_size = 0
+
         described_class.clear_os_cache
         @host_os = RbConfig::CONFIG['host_os']
     end
@@ -155,20 +158,19 @@ describe Arachni::Introspector do
     end
 
     describe '.recheck_issue' do
-        before :all do
-            @issue = described_class.scan_and_report( app, options ).
-                issues.first.variations.first
+        let(:issue) do
+            described_class.scan_and_report( app, options ).issues.first.variations.first
         end
 
         context 'when the issue still exists' do
             it 'returns the reproduced issue' do
-                expect(subject.recheck_issue( app, @issue, options )).to eq @issue
+                expect(subject.recheck_issue( app, issue, options )).to eq issue
             end
         end
 
         context 'when the issue does not still exist' do
             it 'returns nil' do
-                expect(subject.recheck_issue( EmptyApp, @issue, options )).to be_nil
+                expect(subject.recheck_issue( EmptyApp, issue, options )).to be_nil
             end
         end
     end

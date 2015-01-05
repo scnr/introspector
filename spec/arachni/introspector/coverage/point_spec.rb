@@ -32,8 +32,23 @@ describe Arachni::Introspector::Coverage::Point do
     end
 
     describe '#stack_frame' do
-        it "returns an #{described_class::StackFrame}" do
-            expect(subject.stack_frame).to be_kind_of described_class::StackFrame
+        context 'when there is a #context' do
+            it "returns an #{described_class::StackFrame}" do
+                expect(subject.stack_frame).to be_kind_of described_class::StackFrame
+            end
+        end
+
+        context 'when there is no #context' do
+            it 'returns nil' do
+                allow(subject).to receive(:context) { nil }
+                expect(subject.stack_frame).to be_nil
+            end
+        end
+    end
+
+    describe '#context' do
+        it 'returns the associated binding' do
+            expect(subject.context).to be_kind_of Binding
         end
     end
 

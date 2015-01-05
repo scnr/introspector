@@ -83,7 +83,7 @@ describe Arachni::Introspector::Coverage do
             it 'is forwarded to #trace' do
                 b = proc{}
 
-                expect_any_instance_of(described_class).to receive(:trace).with do |&arg|
+                expect_any_instance_of(described_class).to receive(:trace) do |&arg|
                     expect(arg).to be b
                 end
                 described_class.new(&b)
