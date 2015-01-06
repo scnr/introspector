@@ -271,12 +271,22 @@ describe Arachni::Introspector::Scan do
     end
 
     describe '#recheck_issue' do
+        context 'when the scan is still running' do
+            it "raises #{described_class::Error::StillRunning}" do
+                subject.start_in_thread
+
+                expect do
+                    subject.recheck_issue( nil )
+                end.to raise_error described_class::Error::StillRunning
+            end
+        end
+
         context 'when the issue still exists' do
             it 'returns the reproduced issue' do
                 subject.start
                 issue = subject.report.issues.first.variations.first
 
-                expect(subject.recheck_issue( @issue )).to eq issue
+                expect(subject.recheck_issue( issue )).to eq issue
             end
         end
 
@@ -284,8 +294,10 @@ describe Arachni::Introspector::Scan do
             it 'returns nil' do
                 subject.start
                 issue = subject.report.issues.first.variations.first
+                subject.clean_up
 
-                expect(described_class.new( EmptyApp ).recheck_issue( issue )).to be_nil
+                @subject = described_class.new( EmptyApp )
+                expect(@subject.recheck_issue( issue )).to be_nil
             end
         end
     end

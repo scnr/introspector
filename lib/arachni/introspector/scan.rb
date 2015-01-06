@@ -65,7 +65,12 @@ class Scan
     #   Issue to recheck.
     # @return   [Arachni::Issue,nil]
     #   Reproduced issue or `nil` if the issue couldn't be reproduced.
+    #
+    # @raise    [Error::StillRunning]
+    #   If the scan is still running.
     def recheck_issue( issue )
+        fail_if_still_running
+
         start_app
 
         @framework.checks.clear
@@ -82,6 +87,8 @@ class Scan
     #
     # Starts the scan.
     #
+    # @raise    [Error::StillRunning]
+    #   If the scan is running.
     # @raise    [Error::Dirty]
     #   If the scan has already been used.
     def start
