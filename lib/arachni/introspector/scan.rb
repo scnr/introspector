@@ -30,11 +30,11 @@ class Scan
     attr_reader :framework
 
     # @return   [#call]
-    #   Rack app.
-    attr_reader :app
+    #   Rack application.
+    attr_reader :application
 
-    # @param    [#call] app
-    #   Rack app.
+    # @param    [#call] application
+    #   Rack application.
     # @param    [Hash]  options
     # @option  options  [String]    :host
     #   Hostname to use -- defaults to `app` name.
@@ -42,11 +42,11 @@ class Scan
     #   Port number to use.
     # @option  options  [Hash]    :framework
     #   {Arachni::Framework} options for {Arachni::Options#update}.
-    def initialize( app, options = {} )
-        @app     = app
-        @options = options.dup
+    def initialize( application, options = {} )
+        @application = application
+        @options     = options.dup
 
-        @host = @options[:host] || @app.to_s.downcase.gsub( '::', '-' )
+        @host = @options[:host] || @application.to_s.downcase.gsub( '::', '-' )
         @port = @options[:port] || 80
 
         set_options
@@ -177,7 +177,7 @@ class Scan
     end
 
     def start_app
-        Rack::Handler::ArachniIntrospector.run_in_thread @app, @options
+        Rack::Handler::ArachniIntrospector.run_in_thread @application, @options
     end
 
     def stop_app

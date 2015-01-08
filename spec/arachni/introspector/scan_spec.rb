@@ -1,5 +1,5 @@
 describe Arachni::Introspector::Scan do
-    subject { @subject = described_class.new( app, options ) }
+    subject { @subject = described_class.new( application, options ) }
     let(:options) {
         {
             framework: {
@@ -10,7 +10,7 @@ describe Arachni::Introspector::Scan do
             }
         }
     }
-    let(:app) { XssApp }
+    let(:application) { XssApp }
 
     before do
         # No need for browsers in these tests...
@@ -28,8 +28,8 @@ describe Arachni::Introspector::Scan do
     end
 
     describe '#initialize' do
-        it 'sets #app' do
-            expect(subject.app).to be XssApp
+        it 'sets #application' do
+            expect(subject.application).to be XssApp
         end
 
         it 'disables platform fingerprinting' do
@@ -71,7 +71,7 @@ describe Arachni::Introspector::Scan do
 
             it "sets #{Arachni::Options}" do
                 expect(Arachni::Options).to receive(:update).with(options[:framework])
-                @subject = described_class.new( app, options )
+                @subject = described_class.new( application, options )
             end
 
             describe ':host' do
@@ -89,9 +89,9 @@ describe Arachni::Introspector::Scan do
                     let(:options) do
                         {}
                     end
-                    let(:app) { described_class }
+                    let(:application) { described_class }
 
-                    it 'uses the app name' do
+                    it 'uses the application name' do
                         expect(subject.framework.options.url).to eq 'http://arachni-introspector-scan/'
                     end
                 end

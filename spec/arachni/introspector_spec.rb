@@ -10,7 +10,7 @@ describe Arachni::Introspector do
             }
         }
     }
-    let(:app) { XssApp }
+    let(:application) { XssApp }
 
     before do
         # No need for browsers in these tests...
@@ -88,7 +88,7 @@ describe Arachni::Introspector do
         end
 
         it 'starts a scan' do
-            @scan = subject.scan( app, options )
+            @scan = subject.scan( application, options )
 
             expect(@scan.status).to be :done
             expect(@scan.report.issues).to be_any
@@ -96,25 +96,25 @@ describe Arachni::Introspector do
 
         context 'when a block is given' do
             it 'cleans up the environment after it calls it' do
-                subject.scan( app, options ) do |scan|
+                subject.scan( application, options ) do |scan|
                     expect(scan).to receive(:clean_up)
                 end
             end
 
             it 'calls it after the scan completes' do
-                subject.scan( app, options ) do |scan|
+                subject.scan( application, options ) do |scan|
                     expect(scan).to be_done
                 end
             end
 
             it 'passes the scan to it' do
-                subject.scan( app, options ) do |scan|
+                subject.scan( application, options ) do |scan|
                     expect(scan).to be_kind_of described_class::Scan
                 end
             end
 
             it 'returns the block return value' do
-                expect(subject.scan( app, options ) { :stuff }).to be :stuff
+                expect(subject.scan( application, options ) { :stuff }).to be :stuff
             end
         end
     end
@@ -129,14 +129,14 @@ describe Arachni::Introspector do
         end
 
         it 'starts the scan in a thread' do
-            @scan = subject.scan_in_thread( app, options )
+            @scan = subject.scan_in_thread( application, options )
             @scan.thread.join
             expect(@scan).to be_done
         end
 
         context 'when a block has been given' do
             it 'is called once the scan finishes' do
-                subject.scan_in_thread( app, options ) do |scan|
+                subject.scan_in_thread( application, options ) do |scan|
                     @scan = scan
                     expect(@scan).to be_kind_of described_class::Scan
                     expect(@scan).to be_done
@@ -158,25 +158,25 @@ describe Arachni::Introspector do
         end
 
         it 'performs a scan and returns the report' do
-            report = described_class.scan_and_report( app, options )
+            report = described_class.scan_and_report( application, options )
             expect(report.issues).to be_any
         end
 
         it 'cleans up the environment' do
             expect_any_instance_of(described_class::Scan).to receive(:clean_up)
 
-            described_class.scan_and_report( app, options )
+            described_class.scan_and_report( application, options )
         end
     end
 
     describe '.recheck_issue' do
         let(:issue) do
-            described_class.scan_and_report( app, options ).issues.first.variations.first
+            described_class.scan_and_report( application, options ).issues.first.variations.first
         end
 
         context 'when the issue still exists' do
             it 'returns the reproduced issue' do
-                expect(subject.recheck_issue( app, issue, options )).to eq issue
+                expect(subject.recheck_issue( application, issue, options )).to eq issue
             end
         end
 
