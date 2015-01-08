@@ -26,14 +26,6 @@ class Scan
         :autothrottle
     ]
 
-    DEFAULT_CHECKS = [
-        '*'
-    ]
-
-    DEFAULT_ELEMENTS = [
-        :links, :forms, :cookies, :xmls, :jsons
-    ]
-
     # @return   [Arachni::Framework]
     attr_reader :framework
 
@@ -196,20 +188,11 @@ class Scan
         path = @options[:path].to_s
         path = "/#{path}" if !path.start_with?( '/' )
 
-        options             = @options.delete(:framework) || {}
-        options[:checks]  ||= DEFAULT_CHECKS
-        options[:plugins] ||= {}
-
-        Options.update options
+        Options.update( @options.delete(:framework) || {} )
 
         Options.url               = "http://#{@host}:#{@port}#{path}"
         Options.no_fingerprinting = true
         Options.platforms        |= [Introspector.os, :rack, :ruby]
-
-        if !Options.audit.links? && !Options.audit.forms? ||
-            !Options.audit.cookies? || !Options.audit.headers?
-            Options.audit.elements DEFAULT_ELEMENTS
-        end
     end
 
     def set_framework

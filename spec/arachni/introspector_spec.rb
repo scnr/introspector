@@ -1,6 +1,15 @@
 describe Arachni::Introspector do
     subject { described_class }
-    let(:options) { {} }
+    let(:options) {
+        {
+            framework: {
+                checks: ['*'],
+                audit:  {
+                    elements: [:links]
+                }
+            }
+        }
+    }
     let(:app) { XssApp }
 
     before do
@@ -140,7 +149,10 @@ describe Arachni::Introspector do
         let(:options) do
             {
                 framework: {
-                    checks: 'xss'
+                    checks: 'xss',
+                    audit: {
+                        elements: [:links]
+                    }
                 }
             }
         end

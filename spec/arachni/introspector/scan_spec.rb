@@ -1,6 +1,15 @@
 describe Arachni::Introspector::Scan do
     subject { @subject = described_class.new( app, options ) }
-    let(:options) { {} }
+    let(:options) {
+        {
+            framework: {
+                checks: ['*'],
+                audit:  {
+                    elements: [:links]
+                }
+            }
+        }
+    }
     let(:app) { XssApp }
 
     before do
@@ -146,60 +155,33 @@ describe Arachni::Introspector::Scan do
                 it 'sets the checks' do
                     expect(subject.framework.checks.keys).to eq [options[:framework][:checks]]
                 end
-
-                context 'when not given' do
-                    let(:options) do
-                        {}
-                    end
-
-                    it "loads #{described_class}::DEFAULT_CHECKS" do
-                        expected =  subject.framework.checks.parse(
-                            described_class::DEFAULT_CHECKS
-                        ) - described_class::UNLOAD_CHECKS.map(&:to_s)
-
-                        expect(subject.framework.checks.keys).to eq expected
-                    end
-                end
-            end
-
-            context 'when no elements have been specified' do
-                [:links, :forms, :cookies, :xmls, :jsons].each do |type|
-                    it "audits #{type}" do
-                        expect(subject.framework.options.audit.element? type).to be_truthy
-                    end
-                end
-
-                [:headers].each do |type|
-                    it "does not audit #{type}" do
-                        expect(subject.framework.options.audit.element? type).to be_falsey
-                    end
-                end
             end
         end
     end
 
     describe '#start' do
-        let(:options) do
-            {
-                framework: {
-                    checks: 'xss'
+        context 'when idle' do
+            let(:options) do
+                {
+                    framework: {
+                        checks: 'xss',
+                        audit: {
+                            elements: [:links]
+                        }
+                    }
                 }
-            }
-        end
+            end
 
-        it 'starts the scan' do
-            expect(subject.status).to be :ready
-            subject.start
-            expect(subject.status).to be :done
+            it 'starts the scan' do
+                expect(subject.status).to be :ready
+                subject.start
+                expect(subject.status).to be :done
 
-            expect(subject.report.issues).to be_any
+                expect(subject.report.issues).to be_any
+            end
         end
 
         context 'when the scan has already started' do
-            let(:options) do
-                {}
-            end
-
             it "raises #{described_class::Error::StillRunning}" do
                 subject.start_in_thread
 
