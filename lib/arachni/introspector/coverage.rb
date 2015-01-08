@@ -80,7 +80,15 @@ class Coverage
     private
 
     def create_point_from_trace_point( tp )
-        Point.from_trace_point( tp, coverage: self )
+        options = {
+            coverage: self
+        }
+
+        if scope.without_context?
+            options[:context] = nil
+        end
+
+        Point.from_trace_point( tp, options )
     end
 
 end

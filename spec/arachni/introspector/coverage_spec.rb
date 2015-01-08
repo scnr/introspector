@@ -131,7 +131,7 @@ describe Arachni::Introspector::Coverage do
         end
 
         context "when #{described_class::Scope}#in?" do
-            context 'returns true' do
+            context 'true 'do
                 let(:scope) do
                     described_class::Scope.new(
                         filter: proc do |point|
@@ -152,6 +152,32 @@ describe Arachni::Introspector::Coverage do
                     ]
 
                     expect(point_data).to eq expected_data
+                end
+            end
+        end
+
+        context "when #{described_class::Scope}#without_context?" do
+            context 'true' do
+                let(:scope) do
+                    described_class::Scope.new(
+                        with_context: true
+                    )
+                end
+
+                it "sets #{described_class::Point}#context" do
+                    expect(subject.points.first.context).to be_kind_of Binding
+                end
+            end
+
+            context 'false' do
+                let(:scope) do
+                    described_class::Scope.new(
+                        with_context: false
+                    )
+                end
+
+                it "does not set #{described_class::Point}#context" do
+                    expect(subject.points.first.context).to be_nil
                 end
             end
         end

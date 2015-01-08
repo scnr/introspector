@@ -1,6 +1,63 @@
 describe Arachni::Introspector::Coverage::Scope do
-    subject { described_class.new }
+    subject { described_class.new options }
+    let(:options) {{}}
     let(:point) { point = Class.new }
+
+    describe '#with_context?' do
+        context 'when the :with_context option is' do
+            context 'true' do
+                let(:options) do
+                    {
+                        with_context: true
+                    }
+                end
+
+                it 'returns true' do
+                    expect( subject.with_context? ).to be_truthy
+                end
+            end
+
+            context 'false' do
+                let(:options) do
+                    {
+                        with_context: false
+                    }
+                end
+
+                it 'returns false' do
+                    expect( subject.with_context? ).to be_falsey
+                end
+            end
+        end
+    end
+
+    describe '#without_context?' do
+        context 'when the :with_context option is' do
+            context 'true' do
+                let(:options) do
+                    {
+                        with_context: true
+                    }
+                end
+
+                it 'returns false' do
+                    expect( subject.without_context? ).to be_falsey
+                end
+            end
+
+            context 'false' do
+                let(:options) do
+                    {
+                        with_context: false
+                    }
+                end
+
+                it 'returns true' do
+                    expect( subject.without_context? ).to be_truthy
+                end
+            end
+        end
+    end
 
     describe '#empty?' do
         context 'when the scope has not been configured' do

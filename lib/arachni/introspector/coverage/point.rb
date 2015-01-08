@@ -45,6 +45,8 @@ class Point
         @id = self.class.increment_id
 
         options.each do |k, v|
+            next if v.nil?
+
             send( "#{k}=", v )
         end
 

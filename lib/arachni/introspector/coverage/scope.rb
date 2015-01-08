@@ -20,6 +20,10 @@ class Scope
     #   Exclude trace points whose file path matches this pattern.
     attr_accessor :path_exclude_patterns
 
+    # @return   [Bool]
+    #   Include runtime {Point#context} in the coverage data.
+    attr_accessor :with_context
+
     # @return   [#call,nil]
     #   Block used to determine whether or not to include a native `TracePoint`
     #   in the trace.
@@ -34,6 +38,14 @@ class Scope
 
         @path_include_patterns ||= []
         @path_exclude_patterns ||= []
+    end
+
+    def with_context?
+        !!@with_context
+    end
+
+    def without_context?
+        !with_context?
     end
 
     # @return   [Bool]
