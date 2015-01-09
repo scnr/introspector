@@ -111,6 +111,25 @@ class<<self
         )
     end
 
+    # Include the {Arachni::UI::CLI}'s {Arachni::UI::Output} interface
+    # to show scan messages.
+    def enable_output
+        @with_output_interface ||= Gem::Specification.each do |spec|
+            next if spec.name != 'arachni'
+            require "#{spec.gem_dir}/ui/cli/output"
+            break
+        end
+
+        Arachni::UI::Output.unmute
+    end
+
+    # Mutes the {Arachni::UI::Output} interface.
+    #
+    # @see #enable_output
+    def disable_output
+        Arachni::UI::Output.mute
+    end
+
     # @private
     def clear_os_cache
         @os = nil
