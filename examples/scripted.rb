@@ -5,7 +5,12 @@ include Arachni
 
 # Include the Arachni::UI::CLI's Arachni::UI::Output interface to show how the
 # Introspector's behavior fits in with the usual Framework scan process.
+#
+# This is also **very** helpful during development and debugging.
 Introspector.enable_output
+
+# In case you're the curious type:
+# UI::Output.debug( 3 )
 
 # Utility method to print out coverage data.
 #
@@ -132,30 +137,31 @@ issue_recheck_options = {
 
 # You can hook into the HTTP::Client interface to monitor all responses and
 # keep track of the coverage of their requests.
-HTTP::Client.on_complete do |response|
-    request = response.request
-
-    puts request.inspect
-    # <Arachni::HTTP::Request @id=2 @mode=async @method=get @url="http://myapp/"
-    #   @parameters={"v"=>"stuff<some_dangerous_input_511ae323ed73c1a2348be673dc8360ef/>"}
-    #   @high_priority= @performer=#<Arachni::Element::Link (get)
-    #   auditor=Arachni::Checks::Xss url="http://myapp/" action="http://myapp/"
-    #   default-inputs={"v"=>"stuff"} inputs={"v"=>"stuff<some_dangerous_input_511ae323ed73c1a2348be673dc8360ef/>"}
-    #   seed="<some_dangerous_input_511ae323ed73c1a2348be673dc8360ef/>"
-    #   affected-input-name="v" affected-input-value="stuff<some_dangerous_input_511ae323ed73c1a2348be673dc8360ef/>">>
-
-    print_coverage request.coverage
-end
+# HTTP::Client.on_complete do |response|
+#     request = response.request
+#     puts request.inspect
+#     print_coverage request.coverage
+# end
 
 # Simple scan using one of the Introspector helper methods.
 # Runs a scan and give us the usual Arachni::Report, easy peasy.
-Introspector.scan_and_report( MyApp, scan_options ).issues.each do |issue|
+report = Introspector.scan_and_report( MyApp, scan_options )
+
+# Shut the system up again, it'll be quite annoying when fetching context data
+# by rechecking issues.
+Introspector.disable_output
+
+report.issues.each do |issue|
+    puts '-' * 100
+    puts "Fetching context data for: #{issue.name} in '#{issue.vector.type}' " <<
+             "input '#{issue.affected_input_name}':"
 
     # Now that we've got some issues let's recheck them with full coverage in
     # order to get the juicy runtime context.
-    issue = Introspector.recheck_issue( MyApp, issue.variations.first, issue_recheck_options )
+    issue = Introspector.recheck_issue(
+        MyApp, issue.variations.first, issue_recheck_options
+    )
 
-    puts "#{issue.name} in '#{issue.vector.type}' input '#{issue.affected_input_name}':"
     puts
     print_coverage issue.variations.first.request.coverage
 end

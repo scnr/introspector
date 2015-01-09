@@ -151,7 +151,7 @@ class <<self
             app_call = proc { response.code, headers, body = @app.call( environment ) }
 
             if @options[:coverage]
-                request.coverage = Arachni::Introspector::Coverage.new( @options[:coverage], &app_call )
+                request.trace( @options[:coverage], &app_call )
             else
                 app_call.call
             end

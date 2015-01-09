@@ -1,15 +1,11 @@
 require 'coverage'
-require 'arachni/introspector/coverage/point'
+require 'arachni/introspector/patches/http/request/coverage/point'
 
 module Arachni
-module Introspector
+module HTTP
+class Request
 
 class Coverage
-
-    class Error < Introspector::Error
-        class InvalidScope < Error
-        end
-    end
 
     # @return   [Scope]
     attr_accessor :scope
@@ -30,14 +26,14 @@ class Coverage
     def initialize( options = {}, &block )
         options = options.dup
 
-        if (scope = options.delete(:scope)).is_a? Scope
+        if (scope = options.delete(:scope)).is_a? Introspector::Scope
             @scope = scope
         elsif scope.is_a? Hash
-            @scope = Scope.new( scope )
+            @scope = Introspector::Scope.new( scope )
         elsif scope.nil?
-            @scope = Scope.new
+            @scope = Introspector::Scope.new
         else
-            fail Error::InvalidScope
+            fail Introspector::Scope::Error::Invalid
         end
 
         @points = []
@@ -92,5 +88,6 @@ class Coverage
 
 end
 
+end
 end
 end

@@ -5,18 +5,18 @@ def points_to_data( points )
     end
 end
 
-describe Arachni::Introspector::Coverage do
+describe Arachni::HTTP::Request::Coverage do
     subject { described_class.new scope: scope }
 
     let(:scope) do
-        described_class::Scope.new
+        Arachni::Introspector::Scope.new
     end
     let(:target_path) do
         Target.new.method(:stuff).source_location.first
     end
 
     it 'supports Marshal serialization' do
-        subject.scope = described_class::Scope.new( path_start_with: target_path )
+        subject.scope = Arachni::Introspector::Scope.new( path_start_with: target_path )
 
         subject.trace do
             target = Target.new
@@ -47,15 +47,15 @@ describe Arachni::Introspector::Coverage do
 
     describe '#initialize' do
         context 'when :scope is' do
-            context "#{Arachni::Introspector::Coverage::Scope}" do
+            context "#{Arachni::Introspector::Scope}" do
                 it 'sets it' do
-                    scope = Arachni::Introspector::Coverage::Scope.new
+                    scope = Arachni::Introspector::Scope.new
                     expect(described_class.new( scope: scope ).scope).to be scope
                 end
             end
 
             context 'Hash' do
-                it "creates a #{Arachni::Introspector::Coverage::Scope} from it" do
+                it "creates a #{Arachni::Introspector::Scope} from it" do
                     path_start_with = '/stuff/blah'
 
                     expect(described_class.new( scope: {
@@ -65,16 +65,16 @@ describe Arachni::Introspector::Coverage do
             end
 
             context 'nil' do
-                it "creates an empty #{Arachni::Introspector::Coverage::Scope}" do
+                it "creates an empty #{Arachni::Introspector::Scope}" do
                     expect(described_class.new.scope).to be_empty
                 end
             end
 
             context 'other' do
-                it "raises #{Arachni::Introspector::Coverage::Error::InvalidScope}" do
+                it "raises #{Arachni::Introspector::Scope::Error::Invalid}" do
                     expect {
                         described_class.new( scope: '' )
-                    }.to raise_error Arachni::Introspector::Coverage::Error::InvalidScope
+                    }.to raise_error Arachni::Introspector::Scope::Error::Invalid
                 end
             end
         end
@@ -100,7 +100,7 @@ describe Arachni::Introspector::Coverage do
         end
 
         let(:scope) do
-            described_class::Scope.new( path_start_with: target_path )
+            Arachni::Introspector::Scope.new( path_start_with: target_path )
         end
         let(:point_data) do
             points_to_data( subject.points )
@@ -130,36 +130,24 @@ describe Arachni::Introspector::Coverage do
             expect(subject.trace{}).to be subject
         end
 
-        context "when #{described_class::Scope}#in?" do
-            context 'true 'do
+        context "when #{Arachni::Introspector::Scope}#in?" do
+            context 'false'do
                 let(:scope) do
-                    described_class::Scope.new(
-                        filter: proc do |point|
-                            point.defined_class == Target
-                        end
-                    )
+                    s = Arachni::Introspector::Scope.new
+                    allow(s).to receive(:in?) { false }
+                    s
                 end
 
-                it 'logs the point' do
-                    expected_data = [
-                        [ target_path, 2, 'Target', :stuff, :call ],
-                        [ target_path, 3, 'Target', :stuff, :line ],
-                        [ target_path, 4, 'Target', :stuff, :line ],
-                        [ target_path, 5, 'Target', :stuff, :line ],
-                        [ target_path, 6, 'Target', :stuff, :line ],
-                        [ target_path, 8, 'Target', :stuff, :line ],
-                        [ target_path, 9, 'Target', :stuff, :return ]
-                    ]
-
-                    expect(point_data).to eq expected_data
+                it 'does not log the point' do
+                    expect(point_data).to be_empty
                 end
             end
         end
 
-        context "when #{described_class::Scope}#without_context?" do
+        context "when #{Arachni::Introspector::Scope}#without_context?" do
             context 'true' do
                 let(:scope) do
-                    described_class::Scope.new(
+                    Arachni::Introspector::Scope.new(
                         with_context: true
                     )
                 end
@@ -171,7 +159,7 @@ describe Arachni::Introspector::Coverage do
 
             context 'false' do
                 let(:scope) do
-                    described_class::Scope.new(
+                    Arachni::Introspector::Scope.new(
                         with_context: false
                     )
                 end

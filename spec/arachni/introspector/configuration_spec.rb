@@ -13,7 +13,7 @@ describe Arachni::Introspector::Configuration do
 
                 coverage:    {
                     scope: {
-                        path_ends_with: 'xss_app.rb'
+                        path_end_with: 'xss_app.rb'
                     }
                 },
 

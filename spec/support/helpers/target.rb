@@ -19,7 +19,7 @@ end
 
 def get_point( events = [], &block )
     get_trace_point *events do |tp|
-        block.call Arachni::Introspector::Coverage::Point.from_trace_point( tp )
+        block.call Arachni::HTTP::Request::Coverage::Point.from_trace_point( tp )
     end
 end
 

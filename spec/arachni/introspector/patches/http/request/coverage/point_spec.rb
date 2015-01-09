@@ -1,9 +1,9 @@
-describe Arachni::Introspector::Coverage::Point do
-    subject { Arachni::Introspector::Coverage::Point.new( data ) }
+describe Arachni::HTTP::Request::Coverage::Point do
+    subject { described_class.new( data ) }
     let(:data) { Factory[:point_data] }
 
     def new_point
-        Arachni::Introspector::Coverage::Point.new( Factory[:point_data] )
+        described_class.new( Factory[:point_data] )
     end
 
     it 'supports Marshal serialization' do

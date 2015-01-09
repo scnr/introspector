@@ -1,8 +1,12 @@
 module Arachni
 module Introspector
-class Coverage
 
 class Scope
+
+    class Error < Introspector::Error
+        class Invalid < Error
+        end
+    end
 
     # @return   [String,nil]
     #   Include trace points whose file path starts with this string.
@@ -23,11 +27,6 @@ class Scope
     # @return   [Bool]
     #   Include runtime {Point#context} in the coverage data.
     attr_accessor :with_context
-
-    # @return   [#call,nil]
-    #   Block used to determine whether or not to include a native `TracePoint`
-    #   in the trace.
-    attr_accessor :filter
 
     # @param    [Hash]  options
     #   Sets instance attributes.
@@ -52,7 +51,7 @@ class Scope
     #   `true` if scope has no configuration, `false` otherwise.
     def empty?
         !@path_start_with && !@path_end_with && @path_include_patterns.empty? &&
-            @path_exclude_patterns.empty? && !@filter
+            @path_exclude_patterns.empty?
     end
 
     # @param    [TracePoint]    point
@@ -94,13 +93,10 @@ class Scope
             end
         end
 
-        return !!@filter.call( point ) if @filter
-
         true
     end
 
 end
 
-end
 end
 end

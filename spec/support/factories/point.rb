@@ -11,5 +11,5 @@ Factory.define :point_data do
 end
 
 Factory.define :point do
-    Arachni::Introspector::Coverage::Point.new( Factory[:point_data] )
+    Arachni::HTTP::Request::Coverage::Point.new( Factory[:point_data] )
 end

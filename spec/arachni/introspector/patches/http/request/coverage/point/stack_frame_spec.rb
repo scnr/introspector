@@ -1,4 +1,4 @@
-describe Arachni::Introspector::Coverage::Point::StackFrame do
+describe Arachni::HTTP::Request::Coverage::Point::StackFrame do
     subject { described_class.new point }
     let(:point) { Factory[:point] }
 

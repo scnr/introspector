@@ -1,4 +1,5 @@
 require 'base64'
+require 'arachni/introspector/patches/http/request/coverage'
 
 module Arachni
 module HTTP
@@ -7,6 +8,10 @@ class Request
     attr_accessor :coverage
 
     alias :old_prepare_headers :prepare_headers
+
+    def trace( options = {}, &block )
+        @coverage = Coverage.new( options, &block )
+    end
 
     def prepare_headers
         old_prepare_headers

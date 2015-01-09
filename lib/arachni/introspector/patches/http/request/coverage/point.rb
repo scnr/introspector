@@ -1,7 +1,8 @@
-require 'arachni/introspector/coverage/point/stack_frame'
+require 'arachni/introspector/patches/http/request/coverage/point/stack_frame'
 
 module Arachni
-module Introspector
+module HTTP
+class Request
 class Coverage
 
 # Coverage point, similar in function to a native Ruby TracePoint.
@@ -148,6 +149,7 @@ class Point
 
 end
 
+end
 end
 end
 end

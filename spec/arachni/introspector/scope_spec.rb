@@ -1,4 +1,4 @@
-describe Arachni::Introspector::Coverage::Scope do
+describe Arachni::Introspector::Scope do
     subject { described_class.new options }
     let(:options) {{}}
     let(:point) { point = Class.new }
@@ -91,13 +91,6 @@ describe Arachni::Introspector::Coverage::Scope do
             context '#path_exclude_patterns' do
                 it 'returns false' do
                     subject.path_exclude_patterns = [/stuff/]
-                    expect(subject).to_not be_empty
-                end
-            end
-
-            context '#filter' do
-                it 'returns false' do
-                    subject.filter = proc {}
                     expect(subject).to_not be_empty
                 end
             end
@@ -212,21 +205,6 @@ describe Arachni::Introspector::Coverage::Scope do
                 it 'returns true' do
                     allow(point).to receive(:path) { '/blah/stuff/' }
                     expect(subject.in?( point )).to be_truthy
-                end
-            end
-        end
-
-        context '#filter' do
-            context 'returns true' do
-                it 'returns true' do
-                    subject.filter = proc { true }
-                    expect(subject.in?( point )).to be_truthy
-                end
-            end
-            context 'returns false' do
-                it 'returns false' do
-                    subject.filter = proc { false }
-                    expect(subject.in?( point )).to be_falsey
                 end
             end
         end

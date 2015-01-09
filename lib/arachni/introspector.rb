@@ -6,8 +6,9 @@ module Introspector
 
 require 'arachni/introspector/version'
 require 'arachni/introspector/error'
+require 'arachni/introspector/scope'
 require 'arachni/introspector/configuration'
-require 'arachni/introspector/coverage'
+# require 'arachni/introspector/coverage'
 require 'arachni/introspector/scan'
 require 'arachni/introspector/patches/http/client'
 require 'arachni/introspector/patches/http/request'

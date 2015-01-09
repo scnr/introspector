@@ -1,7 +1,8 @@
 require 'binding_of_caller'
 
 module Arachni
-module Introspector
+module HTTP
+class Request
 class Coverage
 class Point
 
@@ -103,6 +104,7 @@ class StackFrame
     end
 end
 
+end
 end
 end
 end
