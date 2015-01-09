@@ -73,4 +73,4 @@ Or install it yourself as:
 
 ## Usage
 
-TBD
+For usage examples please see the files under the `examples/` directory.
