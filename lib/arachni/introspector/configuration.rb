@@ -7,7 +7,7 @@ class Configuration
     include Singleton
 
     DEFAULT_FILENAME = 'arachni_introspector.config'
-    DEFAULT_LOCATION = "#{File.dirname( ARGV[0] )}/#{DEFAULT_FILENAME}"
+    DEFAULT_LOCATION = "#{Dir.pwd}/#{DEFAULT_FILENAME}"
 
     # @return   [Hash]
     #   {Scan} options, along with `:application`, holding the Rack application
@@ -39,7 +39,8 @@ class Configuration
     end
 
     def from_file( path = DEFAULT_LOCATION )
-        Kernel.load path
+        Kernel.load( path )
+        self
     end
 
 end

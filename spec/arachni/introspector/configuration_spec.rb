@@ -31,7 +31,7 @@ describe Arachni::Introspector::Configuration do
 
         context 'when no file is given' do
             it "loads #{described_class::DEFAULT_FILENAME} from the current working directory" do
-                expect(Kernel).to receive(:load).with( "#{File.dirname( ARGV[0] )}/#{described_class::DEFAULT_FILENAME}" )
+                expect(Kernel).to receive(:load).with( "#{Dir.pwd}/#{described_class::DEFAULT_FILENAME}" )
                 subject.from_file
             end
         end
