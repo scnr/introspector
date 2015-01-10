@@ -1,3 +1,4 @@
+require 'arachni/introspector/scan/coverage'
 require 'rack/handler/arachni_introspector'
 
 module Arachni
@@ -33,6 +34,9 @@ class Scan
     #   Rack application.
     attr_reader :application
 
+    # @return   [Scan::Coverage]
+    attr_reader :coverage
+
     # @param    [#call] application
     #   Rack application.
     # @param    [Hash]  options
@@ -48,6 +52,12 @@ class Scan
 
         @host = @options[:host] || @application.to_s.downcase.gsub( '::', '-' )
         @port = @options[:port] || 80
+
+        @options[:coverage] ||= {}
+
+        if @options[:coverage][:scan] && @options[:coverage][:scan][:scope]
+            @coverage = Introspector::Scan::Coverage.new( @options[:coverage][:scan] )
+        end
 
         set_options
         set_framework
@@ -92,6 +102,12 @@ class Scan
         start_app
 
         @framework.run
+
+        if @coverage
+            @coverage.retrieve_results
+        end
+
+        nil
     ensure
         stop_app
     end
@@ -146,7 +162,11 @@ class Scan
         stop_app
     end
 
-    [:report, :statistics, :status_messages, :sitemap, :status, :running?,
+    def report
+        @framework.report.tap { |r| r.coverage = @coverage }
+    end
+
+    [:statistics, :status_messages, :sitemap, :status, :running?,
      :scanning?, :paused?, :pause?, :pausing?, :aborted?, :abort?, :aborting?,
      :suspend, :suspend?, :suspended?, :done?, :snapshot_path, :restore].each do |m|
         define_method m do |*args|

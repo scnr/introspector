@@ -17,3 +17,11 @@ end
 def fixture_path_for( file )
     "#{fixtures_path}/#{file}"
 end
+
+def helpers_path
+    "#{support_path}/helpers"
+end
+
+def helper_path_for( file )
+    "#{helpers_path}/#{file}"
+end

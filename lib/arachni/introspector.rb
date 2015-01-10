@@ -6,12 +6,14 @@ module Introspector
 
 require 'arachni/introspector/version'
 require 'arachni/introspector/error'
-require 'arachni/introspector/scope'
 require 'arachni/introspector/configuration'
-# require 'arachni/introspector/coverage'
 require 'arachni/introspector/scan'
+require 'arachni/introspector/patches/report'
 require 'arachni/introspector/patches/http/client'
 require 'arachni/introspector/patches/http/request'
+
+# This should be a good place for it, after all our code has been loaded.
+Coverage.start
 
 class<<self
 

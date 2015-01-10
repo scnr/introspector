@@ -29,6 +29,7 @@ describe Arachni::Introspector do
         end
 
         Arachni::Framework.reset
+        Arachni::Options.reset
         @scan = nil
     end
 
@@ -82,7 +83,10 @@ describe Arachni::Introspector do
         let(:options) do
             {
                 framework: {
-                    checks: 'xss'
+                    checks: 'xss',
+                    audit: {
+                        elements: [:links]
+                    }
                 }
             }
         end
@@ -123,7 +127,10 @@ describe Arachni::Introspector do
         let(:options) do
             {
                 framework: {
-                    checks: 'xss'
+                    checks: 'xss',
+                    audit: {
+                        elements: [:links]
+                    }
                 }
             }
         end

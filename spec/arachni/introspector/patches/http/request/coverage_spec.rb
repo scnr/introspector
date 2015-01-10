@@ -6,17 +6,22 @@ def points_to_data( points )
 end
 
 describe Arachni::HTTP::Request::Coverage do
-    subject { described_class.new scope: scope }
+    subject { described_class.new options }
 
+    let(:options) {
+        {
+            scope: scope
+        }
+    }
     let(:scope) do
-        Arachni::Introspector::Scope.new
+        described_class::Scope.new
     end
     let(:target_path) do
         Target.new.method(:stuff).source_location.first
     end
 
     it 'supports Marshal serialization' do
-        subject.scope = Arachni::Introspector::Scope.new( path_start_with: target_path )
+        subject.scope = described_class::Scope.new( path_start_with: target_path )
 
         subject.trace do
             target = Target.new
@@ -47,15 +52,15 @@ describe Arachni::HTTP::Request::Coverage do
 
     describe '#initialize' do
         context 'when :scope is' do
-            context "#{Arachni::Introspector::Scope}" do
+            context "#{described_class::Scope}" do
                 it 'sets it' do
-                    scope = Arachni::Introspector::Scope.new
+                    scope = described_class::Scope.new
                     expect(described_class.new( scope: scope ).scope).to be scope
                 end
             end
 
             context 'Hash' do
-                it "creates a #{Arachni::Introspector::Scope} from it" do
+                it "creates a #{described_class::Scope} from it" do
                     path_start_with = '/stuff/blah'
 
                     expect(described_class.new( scope: {
@@ -65,16 +70,16 @@ describe Arachni::HTTP::Request::Coverage do
             end
 
             context 'nil' do
-                it "creates an empty #{Arachni::Introspector::Scope}" do
+                it "creates an empty #{described_class::Scope}" do
                     expect(described_class.new.scope).to be_empty
                 end
             end
 
             context 'other' do
-                it "raises #{Arachni::Introspector::Scope::Error::Invalid}" do
+                it "raises #{described_class::Scope::Error::Invalid}" do
                     expect {
                         described_class.new( scope: '' )
-                    }.to raise_error Arachni::Introspector::Scope::Error::Invalid
+                    }.to raise_error described_class::Scope::Error::Invalid
                 end
             end
         end
@@ -100,7 +105,7 @@ describe Arachni::HTTP::Request::Coverage do
         end
 
         let(:scope) do
-            Arachni::Introspector::Scope.new( path_start_with: target_path )
+            described_class::Scope.new( path_start_with: target_path )
         end
         let(:point_data) do
             points_to_data( subject.points )
@@ -130,10 +135,10 @@ describe Arachni::HTTP::Request::Coverage do
             expect(subject.trace{}).to be subject
         end
 
-        context "when #{Arachni::Introspector::Scope}#in?" do
+        context "when #{described_class::Scope}#in?" do
             context 'false'do
                 let(:scope) do
-                    s = Arachni::Introspector::Scope.new
+                    s = described_class::Scope.new
                     allow(s).to receive(:in?) { false }
                     s
                 end
@@ -144,12 +149,10 @@ describe Arachni::HTTP::Request::Coverage do
             end
         end
 
-        context "when #{Arachni::Introspector::Scope}#without_context?" do
+        context "when #{described_class}#without_context?" do
             context 'true' do
-                let(:scope) do
-                    Arachni::Introspector::Scope.new(
-                        with_context: true
-                    )
+                let(:options) do
+                    super().merge( with_context: true )
                 end
 
                 it "sets #{described_class::Point}#context" do
@@ -158,10 +161,8 @@ describe Arachni::HTTP::Request::Coverage do
             end
 
             context 'false' do
-                let(:scope) do
-                    Arachni::Introspector::Scope.new(
-                        with_context: false
-                    )
+                let(:options) do
+                    super().merge( with_context: false )
                 end
 
                 it "does not set #{described_class::Point}#context" do

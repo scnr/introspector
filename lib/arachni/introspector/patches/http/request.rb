@@ -35,8 +35,9 @@ class Request
         response
     end
 
+    alias :old_to_h :to_h
     def to_h
-        super.merge( coverage: coverage )
+        old_to_h.merge( coverage: coverage )
     end
 
 end

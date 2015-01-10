@@ -1,4 +1,5 @@
 require 'coverage'
+require 'arachni/introspector/patches/http/request/coverage/scope'
 require 'arachni/introspector/patches/http/request/coverage/point'
 
 module Arachni
@@ -21,24 +22,29 @@ class Coverage
     # @param    [Block] block
     #   Code to {#trace}.
     #
-    # @raise    [Error::InvalidScope]
+    # @raise    [Introspector::Scope::Error::Invalid]
     #   On unsupported `:scope` option.
     def initialize( options = {}, &block )
         options = options.dup
 
-        if (scope = options.delete(:scope)).is_a? Introspector::Scope
+        if (scope = options.delete(:scope)).is_a? Request::Coverage::Scope
             @scope = scope
         elsif scope.is_a? Hash
-            @scope = Introspector::Scope.new( scope )
+            @scope = Request::Coverage::Scope.new( scope )
         elsif scope.nil?
-            @scope = Introspector::Scope.new
+            @scope = Request::Coverage::Scope.new
         else
-            fail Introspector::Scope::Error::Invalid
+            fail Request::Coverage::Scope::Error::Invalid
         end
 
-        @points = []
+        @with_context = options[:with_context]
+        @points       = []
 
         trace( &block ) if block_given?
+    end
+
+    def with_context?
+        !!@with_context
     end
 
     # Traces code execution events as {Point points} and populates {#points}.
@@ -50,7 +56,7 @@ class Coverage
     #   `self`
     def trace( &block )
         TracePoint.new do |tp|
-            next if @scope.out?( tp )
+            next if @scope.out?( tp.path )
 
             @points << create_point_from_trace_point( tp )
         end.enable(&block)
@@ -60,7 +66,6 @@ class Coverage
 
     def marshal_dump
         instance_variables.inject( {} ) do |h, iv|
-            next h if iv == :@scope
             h[iv.to_s.gsub('@','')] = instance_variable_get( iv )
             h
         end
@@ -79,7 +84,7 @@ class Coverage
             coverage: self
         }
 
-        if scope.without_context?
+        if !with_context?
             options[:context] = nil
         end
 

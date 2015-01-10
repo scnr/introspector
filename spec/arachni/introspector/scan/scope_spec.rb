@@ -1,63 +1,6 @@
-describe Arachni::Introspector::Scope do
+describe Arachni::Introspector::Scan::Coverage::Scope do
     subject { described_class.new options }
     let(:options) {{}}
-    let(:point) { point = Class.new }
-
-    describe '#with_context?' do
-        context 'when the :with_context option is' do
-            context 'true' do
-                let(:options) do
-                    {
-                        with_context: true
-                    }
-                end
-
-                it 'returns true' do
-                    expect( subject.with_context? ).to be_truthy
-                end
-            end
-
-            context 'false' do
-                let(:options) do
-                    {
-                        with_context: false
-                    }
-                end
-
-                it 'returns false' do
-                    expect( subject.with_context? ).to be_falsey
-                end
-            end
-        end
-    end
-
-    describe '#without_context?' do
-        context 'when the :with_context option is' do
-            context 'true' do
-                let(:options) do
-                    {
-                        with_context: true
-                    }
-                end
-
-                it 'returns false' do
-                    expect( subject.without_context? ).to be_falsey
-                end
-            end
-
-            context 'false' do
-                let(:options) do
-                    {
-                        with_context: false
-                    }
-                end
-
-                it 'returns true' do
-                    expect( subject.without_context? ).to be_truthy
-                end
-            end
-        end
-    end
 
     describe '#empty?' do
         context 'when the scope has not been configured' do
@@ -102,13 +45,13 @@ describe Arachni::Introspector::Scope do
             context 'returns true' do
                 it 'returns false' do
                     allow(subject).to receive(:in?) { true }
-                    expect(subject.out?( point )).to be_falsey
+                    expect(subject.out?( 'path' )).to be_falsey
                 end
             end
             context 'returns false' do
                 it 'returns true' do
                     allow(subject).to receive(:in?) { false }
-                    expect(subject.out?( point )).to be_truthy
+                    expect(subject.out?( 'path' )).to be_truthy
                 end
             end
         end
@@ -118,21 +61,20 @@ describe Arachni::Introspector::Scope do
         context '#path_start_with' do
             before do
                 subject.path_start_with = '/start/with/this'
-                allow(point).to receive(:path) { path }
             end
 
             context 'matches the start of the path' do
                 let(:path) { "#{subject.path_start_with}/stuff/" }
 
                 it 'returns true' do
-                    expect(subject.in?( point )).to be_truthy
+                    expect(subject.in?( path )).to be_truthy
                 end
             end
             context 'does not match the start of the path' do
                 let(:path) { "/stuff/#{subject.path_start_with}" }
 
                 it 'returns false' do
-                    expect(subject.in?( point )).to be_falsey
+                    expect(subject.in?( path )).to be_falsey
                 end
             end
         end
@@ -140,21 +82,20 @@ describe Arachni::Introspector::Scope do
         context '#path_end_with' do
             before do
                 subject.path_end_with = '/end/with/this'
-                allow(point).to receive(:path) { path }
             end
 
             context 'matches the end of the path' do
                 let(:path) { "/stuff/#{subject.path_end_with}" }
 
                 it 'returns true' do
-                    expect(subject.in?( point )).to be_truthy
+                    expect(subject.in?( path )).to be_truthy
                 end
             end
             context 'does not match the end of the path' do
                 let(:path) { "#{subject.path_end_with}/stuff/" }
 
                 it 'returns false' do
-                    expect(subject.in?( point )).to be_falsey
+                    expect(subject.in?( path )).to be_falsey
                 end
             end
         end
@@ -169,17 +110,16 @@ describe Arachni::Introspector::Scope do
 
             context 'any match the path' do
                 it 'returns true' do
-                    allow(point).to receive(:path) { '/blah/include-this/stuff/' }
-                    expect(subject.in?( point )).to be_truthy
-
-                    allow(point).to receive(:path) { '/blah/include-me-too/stuff/' }
-                    expect(subject.in?( point )).to be_truthy
+                    expect(subject.in?( '/blah/include-this/stuff/' )).to be_truthy
+                    expect(subject.in?( '/blah/include-me-too/stuff/' )).to be_truthy
                 end
             end
+
             context 'none match the path' do
+                let(:path) { '/blah/stuff/' }
+
                 it 'returns false' do
-                    allow(point).to receive(:path) { '/blah/stuff/' }
-                    expect(subject.in?( point )).to be_falsey
+                    expect(subject.in?( path )).to be_falsey
                 end
             end
         end
@@ -194,17 +134,15 @@ describe Arachni::Introspector::Scope do
 
             context 'any match the path' do
                 it 'returns false' do
-                    allow(point).to receive(:path) { '/blah/exclude-this/stuff/' }
-                    expect(subject.in?( point )).to be_falsey
+                    expect(subject.in?( '/blah/exclude-this/stuff/' )).to be_falsey
 
-                    allow(point).to receive(:path) { '/blah/exclude-me-too/stuff/' }
-                    expect(subject.in?( point )).to be_falsey
+                    expect(subject.in?( '/blah/exclude-me-too/stuff/' )).to be_falsey
                 end
             end
+
             context 'none match the path' do
                 it 'returns true' do
-                    allow(point).to receive(:path) { '/blah/stuff/' }
-                    expect(subject.in?( point )).to be_truthy
+                    expect(subject.in?( '/blah/stuff/' )).to be_truthy
                 end
             end
         end

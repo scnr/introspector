@@ -24,6 +24,7 @@ describe Arachni::Introspector::Scan do
         end
 
         Arachni::Framework.reset
+        Arachni::Options.reset
         @subject = nil
     end
 
@@ -267,8 +268,10 @@ describe Arachni::Introspector::Scan do
             it 'returns the reproduced issue' do
                 subject.start
                 issue = subject.report.issues.first.variations.first
+                subject.clean_up
 
-                expect(subject.recheck_issue( issue )).to eq issue
+                @subject = described_class.new( application )
+                expect(@subject.recheck_issue( issue )).to eq issue
             end
         end
 

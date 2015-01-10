@@ -1,5 +1,5 @@
 describe Arachni::HTTP::Request do
-    subject { }
+    subject { Factory[:request] }
 
     expect_it { to respond_to :coverage }
     expect_it { to respond_to :coverage= }
@@ -9,6 +9,9 @@ describe Arachni::HTTP::Request do
     end
 
     describe '#to_h' do
-        it 'includes :coverage'
+        it 'includes :coverage' do
+            subject.coverage = 1
+            expect(subject.to_h[:coverage]).to eq 1
+        end
     end
 end
