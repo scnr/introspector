@@ -8,9 +8,6 @@ include Arachni
 
 # Enable coverage tracking of the web application's source code.
 # (This must be called prior to loading the application environment.)
-#
-# **WARNING**: Enabling scan coverage may cause segfaults depending on interpreter
-# version and web application type.
 Introspector::Scan::Coverage.enable
 
 # Include the web application and its environment.
