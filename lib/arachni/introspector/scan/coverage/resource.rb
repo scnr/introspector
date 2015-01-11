@@ -64,13 +64,24 @@ class Resource
     # @return   [Float]
     #   Percentage of {#hit_line}s.
     def hit_percentage
-        (hit_lines.size / Float(lines.size - skipped_lines.size)) * 100.0
+        return 100.0 if empty?
+
+        lines_to_include = Float(lines.size - skipped_lines.size)
+        return 100.0 if lines_to_include == 0
+
+        (hit_lines.size / lines_to_include) * 100.0
     end
 
     # @return   [Float]
     #   Percentage of {#missed_line}s.
     def miss_percentage
         100.0 - hit_percentage
+    end
+
+    # @return   [Bool]
+    #   `true` if {#lines} are empty, `false` otherwise.
+    def empty?
+        lines.empty?
     end
 
 end

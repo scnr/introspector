@@ -100,4 +100,20 @@ describe Arachni::Introspector::Scan::Coverage::Resource do
             expect(subject.miss_percentage).to eq 40.0
         end
     end
+
+    describe '#empty?' do
+        context 'when #lines are empty' do
+            it 'returns true' do
+                subject.lines.clear
+                expect(subject).to be_empty
+            end
+        end
+
+        context 'when #lines are not empty' do
+            it 'returns true' do
+                expect(subject.lines).to be_any
+                expect(subject).to_not be_empty
+            end
+        end
+    end
 end

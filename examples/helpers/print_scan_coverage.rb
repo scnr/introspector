@@ -41,6 +41,8 @@ def print_scan_coverage( coverage )
     puts '-' * 100
 
     coverage.resources.each do |path, resource|
+        next if resource.empty?
+
         puts "-- #{path}"
         puts "---- Total:    #{resource.lines.size}"
         puts "---- Skipped:  #{resource.skipped_lines.size}"
@@ -65,5 +67,9 @@ def print_scan_coverage( coverage )
             just   = ' ' * (max - number.to_s.size)
             puts "#{just}#{line.number+1} | #{legend} | #{line.content}"
         end
+
+        puts
+        puts '--------------------'
+        puts
     end
 end
