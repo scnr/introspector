@@ -107,7 +107,7 @@ class <<self
             'SERVER_NAME'     => @options[:address],
             'SERVER_PORT'     => @options[:port].to_s,
             'HTTP_VERSION'    => 'HTTP/1.1',
-            'REMOTE_ADDR'     => @options[:address]
+            'REMOTE_ADDR'     => '127.0.0.1'
         }
 
         request.headers.each do |k, v|
@@ -156,6 +156,8 @@ class <<self
                 app_call.call
             end
 
+            response.code = response.code.to_i
+
             body = '' if !body
 
             if body.is_a? String
@@ -172,7 +174,7 @@ class <<self
             environment['rack.errors'].puts response.body
             e.backtrace.each do |line|
                 environment['rack.errors'].puts line
-                response.body << "#{line}\n"
+                response.body += "#{line}\n"
             end
 
             response.headers['content-type'] = 'text/plain'
