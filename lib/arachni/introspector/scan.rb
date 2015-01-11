@@ -110,10 +110,7 @@ class Scan
         @framework.run
 
         if @coverage
-            begin
-                @coverage.retrieve_results
-            rescue RuntimeError
-            end
+            @coverage.retrieve_results
         end
 
         nil
