@@ -3,7 +3,7 @@ require 'binding_of_caller'
 module Arachni
 module HTTP
 class Request
-class Coverage
+class Trace
 class Point
 
 class StackFrame

@@ -1,21 +1,21 @@
-require 'arachni/introspector/patches/http/request/coverage/point/stack_frame'
+require 'arachni/introspector/patches/http/request/trace/point/stack_frame'
 
 module Arachni
 module HTTP
 class Request
-class Coverage
+class Trace
 
-# Coverage point, similar in function to a native Ruby TracePoint.
-# Points to a covered code execution {#event}.
+# Trace point, similar in function to a native Ruby TracePoint.
+# Points to a code execution {#event}.
 class Point
 
     # @return   [Integer]
     #   Unique ID.
     attr_reader   :id
 
-    # @return   [Coverage]
+    # @return   [Trace]
     #   Parent coverage.
-    attr_accessor :coverage
+    attr_accessor :trace
 
     # @return   [String,nil]
     #   Path to the source file, `nil` if no file is available (i.e. compiled code).
@@ -84,8 +84,8 @@ class Point
         stack_frame  = @stack_frame
         @stack_frame = nil
 
-        coverage  = @coverage
-        @coverage = nil
+        trace  = @trace
+        @trace = nil
 
         instance_variables.inject( {} ) do |h, iv|
             h[iv.to_s.gsub('@','')] = instance_variable_get( iv )
@@ -94,7 +94,7 @@ class Point
     ensure
         @trace_point = trace_point
         @stack_frame = stack_frame
-        @coverage    = coverage
+        @trace       = trace
     end
 
     def marshal_load( h )

@@ -61,9 +61,8 @@ class Scan
 
         @options[:coverage] ||= {}
 
-        if Scan::Coverage.enabled? && @options[:coverage][:scan] &&
-            @options[:coverage][:scan][:scope]
-            @coverage = Introspector::Scan::Coverage.new( @options[:coverage][:scan] )
+        if Scan::Coverage.enabled? && @options[:coverage]
+            @coverage = Introspector::Scan::Coverage.new( @options[:coverage] )
         end
 
         set_options

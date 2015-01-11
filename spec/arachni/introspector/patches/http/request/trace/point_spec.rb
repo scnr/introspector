@@ -1,4 +1,4 @@
-describe Arachni::HTTP::Request::Coverage::Point do
+describe Arachni::HTTP::Request::Trace::Point do
     subject { described_class.new( data ) }
     let(:data) { Factory[:point_data] }
 

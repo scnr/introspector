@@ -1,16 +1,24 @@
 require 'base64'
-require 'arachni/introspector/patches/http/request/coverage'
+require 'arachni/introspector/patches/http/request/trace'
 
 module Arachni
 module HTTP
 class Request
 
-    attr_accessor :coverage
+    # @return   [nil,Trace]
+    #   Trace for this request or `nil` if tracing has not been enabled.
+    attr_accessor :trace
 
     alias :old_prepare_headers :prepare_headers
 
-    def trace( options = {}, &block )
-        @coverage = Coverage.new( options, &block )
+    # Traces a `block` and sets {#trace}.
+    #
+    # @param    [Hash]  options
+    #   {Trace} options.
+    # @param    [Block] block
+    #   Block to trace.
+    def with_trace( options = {}, &block )
+        @trace = Trace.new( options, &block )
     end
 
     def prepare_headers
@@ -37,7 +45,7 @@ class Request
 
     alias :old_to_h :to_h
     def to_h
-        old_to_h.merge( coverage: coverage )
+        old_to_h.merge( trace: trace )
     end
 
 end

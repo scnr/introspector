@@ -1,7 +1,7 @@
 module Arachni
 module HTTP
 class Request
-class Coverage
+class Trace
 
 class Scope < Introspector::Scan::Coverage::Scope
 end

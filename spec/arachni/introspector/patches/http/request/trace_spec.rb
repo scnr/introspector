@@ -5,7 +5,7 @@ def points_to_data( points )
     end
 end
 
-describe Arachni::HTTP::Request::Coverage do
+describe Arachni::HTTP::Request::Trace do
     subject { described_class.new options }
 
     let(:options) {
@@ -46,7 +46,7 @@ describe Arachni::HTTP::Request::Coverage do
         expect(point_data).to eq expected_data
 
         new_obj.points.each do |point|
-            expect(point.coverage).to eq new_obj
+            expect(point.trace).to eq new_obj
         end
     end
 

@@ -1,6 +1,6 @@
 APP_PATH = "#{File.expand_path( File.dirname(__FILE__) )}/app.rb"
 
-require_relative 'helpers/print_request_coverage'
+require_relative 'helpers/print_request_trace'
 require_relative 'helpers/print_scan_coverage'
 
 require 'arachni/introspector'
@@ -9,7 +9,8 @@ include Arachni
 # Enable coverage tracking of the web application's source code.
 # (This must be called prior to loading the application environment.)
 #
-# **WARNING**: Enabling scan coverage may cause segfaults.
+# **WARNING**: Enabling scan coverage may cause segfaults depending on interpreter
+# version and web application type.
 Introspector::Scan::Coverage.enable
 
 # Include the web application and its environment.
@@ -26,54 +27,48 @@ Introspector.enable_output
 
 scan_options = {
 
+    # Scan coverage provides simple, high-level coverage data, it includes
+    # file paths and how much of their source got covered.
+    #
+    # Requires `Introspector::Scan::Coverage.enable` to have been called,
+    # otherwise it will have no effect.
     coverage: {
+        scope: {
 
-        # Scan coverage provides simple, high-level coverage data, only includes
-        # file paths and how much of their source got covered.
-        #
-        # It does not include any context and thus doesn't really affect performance.
-        # (Well, maybe just a tiny bit.)
-        #
-        # Requires `Introspector::Scan::Coverage.enable` to have been called,
-        # otherwise it will have no effect.
-        scan:   {
-            scope: {
-
-                # Only keep track of webapp code.
-                #
-                # This will exclude library calls and will keep the instrumentation
-                # and coverage entries short and sweet and to the point.
-                path_start_with: APP_PATH
-            }
+            # Only keep track of webapp code.
+            #
+            # This will exclude library calls and will keep the instrumentation
+            # and coverage entries short and sweet and to the point.
+            path_start_with: APP_PATH
         },
+    },
 
-        # Coverage of HTTP::Request operations can provide a much more in-depth
-        # look into the web application's behavior; this is very useful when
-        # resolving logged issues.
-        #
-        # However, it is a bad idea to enable it during the scan, as it can result
-        # in a x10 performance decrease (this is a demo so we're alright :)).
-        #
-        # To disable request coverage, simply avoid setting the `:request` key
-        # for this configuration Hash.
-        #
-        # In general. this option should only be enabled when rechecking issues,
-        # so as to fetch the necessary context as required.
-        #
-        # Although, if you do need to track overall scan coverage in depth, you
-        # can configure the scope here and then monitor HTTP::Client traffic to
-        # retrieve it for each request (an example will follow).
-        request: {
-            scope: {
+    # Tracing HTTP::Request operations can provide a much more in-depth
+    # look into the web application's behavior; this is very useful when
+    # resolving logged issues.
+    #
+    # However, it is a bad idea to enable it during the scan, as it can result
+    # in a x10 performance decrease (this is a demo so we're alright :)).
+    #
+    # To disable request tracing, simply avoid setting the `:trace` key
+    # for this configuration Hash.
+    #
+    # In general. this option should only be enabled when rechecking issues,
+    # so as to fetch the necessary context as required.
+    #
+    # Although, if you do need to track overall scan coverage in depth, you
+    # can configure the scope here and then monitor HTTP::Client traffic to
+    # retrieve it for each request (an example will follow).
+    trace: {
+        scope: {
 
-                # Only keep track of webapp code.
-                #
-                # This will exclude library calls and will keep the instrumentation
-                # and coverage entries short and sweet and to the point.
-                #
-                # Not to mention the huge effect it'll have on performance.
-                path_start_with: APP_PATH
-            }
+            # Only keep track of webapp code.
+            #
+            # This will exclude library calls and will keep the instrumentation
+            # and trace points short and sweet and to the point.
+            #
+            # Not to mention the huge effect it'll have on performance.
+            path_start_with: APP_PATH
         }
     },
 
@@ -98,27 +93,25 @@ scan_options = {
 }
 
 issue_recheck_options = {
-    coverage: {
-        request: {
-            scope: {
-                path_start_with: APP_PATH
-            },
+    trace: {
+        scope: {
+            path_start_with: APP_PATH
+        },
 
-            # This is where the real magic is, this will let you traverse up the
-            # entire stack at the time the issue was discovered.
-            #
-            # You can access the, at the time, local and instance variables,
-            # evaluate code, get the location of the vulnerable method and lots
-            # more.
-            #
-            # An absolute joy for identifying and debugging issues.
-            with_context: true
-        }
+        # This is where the real magic is, this will let you traverse up the
+        # entire stack at the time the issue was discovered.
+        #
+        # You can access the, at the time, local and instance variables,
+        # evaluate code, get the location of the vulnerable method and lots
+        # more.
+        #
+        # An absolute joy for identifying and debugging issues.
+        with_context: true
     }
 }
 
 # You can hook into the HTTP::Client interface to monitor all responses and
-# keep track of the coverage of their requests, given that request coverage has
+# keep track of the effects of their requests, given that request tracing has
 # been enabled.
 #
 # Or, you may just want to keep a close eye on the scan from an HTTP perspective,
@@ -144,7 +137,7 @@ issue_recheck_options = {
 #     end
 #
 #     # Print the effect our request had on the web application.
-#     print_request_coverage request.coverage
+#     print_request_trace request.trace
 # end
 
 # Simple scan using one of the Introspector helper methods.
@@ -173,7 +166,7 @@ report.issues.each do |issue|
     )
 
     puts
-    print_request_coverage issue.variations.first.request.coverage
+    print_request_trace issue.variations.first.request.trace
 end
 
 # And this is what you'll see:

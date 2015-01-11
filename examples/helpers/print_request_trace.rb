@@ -118,15 +118,15 @@
 #         "local_variable" => "1"
 #     }
 #
-# @param    [Arachni::HTTP::Request::Coverage]   coverage
-def print_request_coverage( coverage )
-    return if !coverage
+# @param    [Arachni::HTTP::Request::Trace]   trace
+def print_request_trace( trace )
+    return if !trace
 
     last_timestamp          = nil
     last_instance_variables = nil
     last_local_variables    = nil
 
-    coverage.points.each.with_index do |point, i|
+    trace.points.each.with_index do |point, i|
         time_diff = last_timestamp ? point.timestamp - last_timestamp : 0
 
         puts "[#{i + 1}] [+#{time_diff}] #{point.inspect}"

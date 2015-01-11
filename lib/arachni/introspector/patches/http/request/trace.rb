@@ -1,12 +1,12 @@
 require 'coverage'
-require 'arachni/introspector/patches/http/request/coverage/scope'
-require 'arachni/introspector/patches/http/request/coverage/point'
+require 'arachni/introspector/patches/http/request/trace/scope'
+require 'arachni/introspector/patches/http/request/trace/point'
 
 module Arachni
 module HTTP
 class Request
 
-class Coverage
+class Trace
 
     # @return   [Scope]
     attr_accessor :scope
@@ -27,14 +27,14 @@ class Coverage
     def initialize( options = {}, &block )
         options = options.dup
 
-        if (scope = options.delete(:scope)).is_a? Request::Coverage::Scope
+        if (scope = options.delete(:scope)).is_a? Request::Trace::Scope
             @scope = scope
         elsif scope.is_a? Hash
-            @scope = Request::Coverage::Scope.new( scope )
+            @scope = Request::Trace::Scope.new( scope )
         elsif scope.nil?
-            @scope = Request::Coverage::Scope.new
+            @scope = Request::Trace::Scope.new
         else
-            fail Request::Coverage::Scope::Error::Invalid
+            fail Request::Trace::Scope::Error::Invalid
         end
 
         @with_context = options[:with_context]
@@ -52,7 +52,7 @@ class Coverage
     # @param    [Block] block
     #   Code to trace.
     #
-    # @return   [Coverage]
+    # @return   [Trace]
     #   `self`
     def trace( &block )
         TracePoint.new do |tp|
@@ -73,7 +73,7 @@ class Coverage
 
     def marshal_load( h )
         h.each { |k, v| instance_variable_set( "@#{k}", v ) }
-        points.each { |point| point.coverage = self }
+        points.each { |point| point.trace = self }
         self
     end
 
@@ -81,7 +81,7 @@ class Coverage
 
     def create_point_from_trace_point( tp )
         options = {
-            coverage: self
+            trace: self
         }
 
         if !with_context?

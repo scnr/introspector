@@ -9,6 +9,9 @@ class Coverage
 
     class <<self
 
+        # @note Enabling scan coverage may cause segfaults depending on
+        #   interpreter version and web application type.
+        #
         # Enables coverage tracking for all subsequently required source files.
         def enable
             ::Coverage.start

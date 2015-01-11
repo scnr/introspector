@@ -150,8 +150,8 @@ class <<self
         begin
             app_call = proc { response.code, headers, body = @app.call( environment ) }
 
-            if @options[:coverage] && @options[:coverage][:request]
-                request.trace( @options[:coverage][:request], &app_call )
+            if @options[:trace]
+                request.with_trace( @options[:trace], &app_call )
             else
                 app_call.call
             end
