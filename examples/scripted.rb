@@ -50,6 +50,9 @@ scan_options = {
     # However, it is a bad idea to enable it during the scan, as it can result
     # in a x10 performance decrease (this is a demo so we're alright :)).
     #
+    # Also, if `Introspector::Scan::Coverage.enable` has been called, tracing
+    # can cause segfaults (in this simple demo though it'll be OK).
+    #
     # To disable request tracing, simply avoid setting the `:trace` key
     # for this configuration Hash.
     #
