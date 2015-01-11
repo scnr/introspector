@@ -297,8 +297,8 @@ describe Arachni::Introspector::Scan do
 
     describe '#clean_up' do
         it "resets the #{Arachni::Framework}" do
-            expect(subject.framework).to receive(:reset).twice
-            expect(Rack::Handler::ArachniIntrospector).to receive(:shutdown).twice
+            expect(subject.framework).to receive(:reset)
+            expect(Rack::Handler::ArachniIntrospector).to receive(:shutdown)
 
             subject.clean_up
         end
@@ -335,4 +335,15 @@ describe Arachni::Introspector::Scan do
         end
     end
 
+    describe '#report' do
+        it 'returns the report'
+        it 'sets #coverage'
+
+        context 'when #clean_up has been called' do
+            it "raises #{described_class::Error::CleanedUp}" do
+                subject.clean_up
+                expect{ subject.report }.to raise_error described_class::Error::CleanedUp
+            end
+        end
+    end
 end

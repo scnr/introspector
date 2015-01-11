@@ -16,6 +16,9 @@ class Scan
 
         class StillRunning < Error
         end
+
+        class CleanedUp < Error
+        end
     end
 
     UNLOAD_CHECKS  = [
@@ -161,6 +164,9 @@ class Scan
     #
     # @raise    [Error::StillRunning]
     def clean_up
+        return if @cleaned_up
+        @cleaned_up = true
+
         fail_if_still_running
 
         @framework.clean_up
@@ -168,7 +174,13 @@ class Scan
         stop_app
     end
 
+    # @return   [Arachni::Report]
+    #
+    # @raise    [Error::CleanedUp]
+    #   If {#clean_up} has already been called.
     def report
+        fail Error::CleanedUp, 'Cannot retrieve report for a #cleaned_up scan.' if @cleaned_up
+
         @framework.report.tap { |r| r.coverage = @coverage }
     end
 
@@ -220,12 +232,12 @@ class Scan
         Options.no_fingerprinting = true
         Options.platforms        |= [Introspector.os, :rack, :ruby]
 
-        # This affects things even though we've overriden the HTTP::Client
-        # interface. For example, it's used by the HTTP::ProxyServer and needs
-        # to be 1 because it's weirdly causing segfaults otherwise.
+        # This affects things even though we've overridden the HTTP::Client
+        # interface. For example, it's used by the HTTP::ProxyServer.
         #
-        # Something to do with Threads, not sure what's going on there...
+        # Also, it's good to give the Framework a heads-up.
         Options.http.request_concurrency = 1
+        Options.http.request_queue_size  = 1
     end
 
     def set_framework
