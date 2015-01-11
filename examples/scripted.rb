@@ -3,13 +3,17 @@ APP_PATH = "#{File.expand_path( File.dirname(__FILE__) )}/app.rb"
 require_relative 'helpers/print_request_coverage'
 require_relative 'helpers/print_scan_coverage'
 
-# The Introspector **has** to be loaded before the web application environment.
 require 'arachni/introspector'
+include Arachni
+
+# Enable coverage tracking of the web application's source code.
+# (This must be called prior to loading the application environment.)
+#
+# **WARNING**: Enabling scan coverage may cause segfaults.
+Introspector::Scan::Coverage.enable
 
 # Include the web application and its environment.
 require APP_PATH
-
-include Arachni
 
 # Include the Arachni::UI::CLI's Arachni::UI::Output interface to show how the
 # Introspector's behavior fits in with the usual Framework scan process.
@@ -29,6 +33,9 @@ scan_options = {
         #
         # It does not include any context and thus doesn't really affect performance.
         # (Well, maybe just a tiny bit.)
+        #
+        # Requires `Introspector::Scan::Coverage.enable` to have been called,
+        # otherwise it will have no effect.
         scan:   {
             scope: {
 

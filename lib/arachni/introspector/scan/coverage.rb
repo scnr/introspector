@@ -7,6 +7,21 @@ module Introspector
 class Scan
 class Coverage
 
+    class <<self
+
+        # Enables coverage tracking for all subsequently required source files.
+        def enable
+            ::Coverage.start
+            @enabled = true
+        end
+
+        # @return   [Bool]
+        #   `true` if coverage has been {#enabled}, `false` otherwise.
+        def enabled?
+            !!@enabled
+        end
+    end
+
     # @return   [Scope]
     attr_accessor :scope
 

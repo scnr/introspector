@@ -12,9 +12,6 @@ require 'arachni/introspector/patches/report'
 require 'arachni/introspector/patches/http/client'
 require 'arachni/introspector/patches/http/request'
 
-# This should be a good place for it, after all our code has been loaded.
-Coverage.start
-
 class<<self
 
     # {Scan#start Runs} a {Scan scan}.

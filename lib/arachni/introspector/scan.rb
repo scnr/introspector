@@ -20,7 +20,7 @@ class Scan
 
     UNLOAD_CHECKS  = [
         :backdoors, :backup_directories, :backup_files, :htaccess_limit,
-        :localstart_asp, :webdav, :xst
+        :localstart_asp, :webdav, :xst, :common_directories, :common_files
     ]
 
     UNLOAD_PLUGINS = [
@@ -50,12 +50,19 @@ class Scan
         @application = application
         @options     = options.dup
 
-        @host = @options[:host] || @application.to_s.downcase.gsub( '::', '-' )
+        klass = @application
+
+        if !@application.is_a?( Class ) && !@application.is_a?( Class )
+            klass = klass.class
+        end
+
+        @host = @options[:host] || klass.to_s.downcase.gsub( '::', '-' )
         @port = @options[:port] || 80
 
         @options[:coverage] ||= {}
 
-        if @options[:coverage][:scan] && @options[:coverage][:scan][:scope]
+        if Scan::Coverage.enabled? && @options[:coverage][:scan] &&
+            @options[:coverage][:scan][:scope]
             @coverage = Introspector::Scan::Coverage.new( @options[:coverage][:scan] )
         end
 
@@ -104,7 +111,10 @@ class Scan
         @framework.run
 
         if @coverage
-            @coverage.retrieve_results
+            begin
+                @coverage.retrieve_results
+            rescue RuntimeError
+            end
         end
 
         nil
@@ -213,6 +223,13 @@ class Scan
         Options.url               = "http://#{@host}:#{@port}#{path}"
         Options.no_fingerprinting = true
         Options.platforms        |= [Introspector.os, :rack, :ruby]
+
+        # This affects things even though we've overriden the HTTP::Client
+        # interface. For example, it's used by the HTTP::ProxyServer and needs
+        # to be 1 because it's weirdly causing segfaults otherwise.
+        #
+        # Something to do with Threads, not sure what's going on there...
+        Options.http.request_concurrency = 1
     end
 
     def set_framework
