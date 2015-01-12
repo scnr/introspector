@@ -127,8 +127,8 @@ describe Arachni::HTTP::Request::Trace do
             expect(point_data).to eq expected_data
         end
 
-        it "assigns 'self' as #{described_class::Point}#coverage" do
-            expect(subject.points.map(&:coverage).uniq).to eq [subject]
+        it "assigns 'self' as #{described_class::Point}#trace" do
+            expect(subject.points.map(&:trace).uniq).to eq [subject]
         end
 
         it 'returns self' do
