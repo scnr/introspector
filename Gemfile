@@ -1,9 +1,5 @@
 source 'https://rubygems.org'
 
-# This version supports JRuby but JRuby only makes bindings available when in
-# intepreted mode.
-gem 'binding_of_caller', '0.7.3.pre1'#, platform: :ruby
-
 group :docs do
     gem 'yard'
     gem 'redcarpet'
