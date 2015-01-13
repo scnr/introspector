@@ -51,33 +51,6 @@ describe Arachni::HTTP::Client do
 
     end
 
-    describe Arachni::Options do
-        describe '#fingerprint?' do
-            context true do
-                it 'performs platform fingerprinting on the response' do
-                    Arachni::Options.fingerprint
-
-                    res = nil
-                    subject.request( @url + '/fingerprint.php' ) { |c_res| res = c_res }
-
-                    expect(res.platforms.to_a).to eq [:php]
-                end
-            end
-
-            context false do
-                it 'does not fingerprint the response' do
-                    Arachni::Platform::Manager.clear
-                    Arachni::Options.do_not_fingerprint
-
-                    res = nil
-                    subject.request( @url + '/fingerprint.php' ) { |c_res| res = c_res }
-
-                    expect(res.platforms).to be_empty
-                end
-            end
-        end
-    end
-
     describe Arachni::OptionGroups::HTTP do
         describe '#request_timeout' do
             context Integer do

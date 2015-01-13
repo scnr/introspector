@@ -1,10 +1,11 @@
-APP_PATH = "#{File.expand_path( File.dirname(__FILE__) )}/app.rb"
-
 require_relative 'helpers/print_request_trace'
 require_relative 'helpers/print_scan_coverage'
-
 require 'arachni/introspector'
+
 include Arachni
+
+# Location of the web application environment loader.
+APP_PATH = "#{File.expand_path( File.dirname(__FILE__) )}/app.rb"
 
 # Enable coverage tracking of the web application's source code.
 # (This must be called prior to loading the application environment.)
@@ -12,6 +13,11 @@ Introspector::Scan::Coverage.enable
 
 # Include the web application and its environment.
 require APP_PATH
+
+# The application will be auto-detected right before a scan starts, you can,
+# however, specify it explicitly if you wish:
+#
+#   Introspector.application = MyApp
 
 # Include the Arachni::UI::CLI's Arachni::UI::Output interface to show how the
 # Introspector's behavior fits in with the usual Framework scan process.
@@ -25,7 +31,7 @@ Introspector.enable_output
 scan_options = {
 
     # Scan coverage provides simple, high-level coverage data, it includes
-    # file paths and how much of their source got covered.
+    # file paths and the source lines that were executed.
     #
     # Requires `Introspector::Scan::Coverage.enable` to have been called,
     # otherwise it will have no effect.
@@ -34,8 +40,8 @@ scan_options = {
 
             # Only keep track of webapp code.
             #
-            # This will exclude library calls and will keep the instrumentation
-            # and coverage entries short and sweet and to the point.
+            # This will exclude library calls and will keep the entries short
+            # and sweet and to the point.
             path_start_with: APP_PATH
         },
     },
@@ -92,23 +98,6 @@ scan_options = {
     }
 }
 
-issue_recheck_options = {
-    trace: {
-        scope: {
-            path_start_with: APP_PATH
-        },
-
-        # This is where the real magic is, this will let you traverse up the
-        # entire stack at the time the issue was discovered.
-        #
-        # You can access the, at the time, local and instance variables,
-        # evaluate code, get the location of the vulnerable method and lots
-        # more.
-        #
-        # An absolute joy for identifying and debugging issues.
-        with_context: true
-    }
-}
 
 # You can hook into the HTTP::Client interface to monitor all responses and
 # keep track of the effects of their requests, given that request tracing has
@@ -121,14 +110,14 @@ issue_recheck_options = {
 # HTTP::Client.on_complete do |response|
 #     request = response.request
 #
-#     # The performer can be any entity, although is usually is either the
-#     # Framework, or a Browser or an Element being submitted.
+#     # The performer can be any entity, although it usually is either the
+#     # Framework, a Browser or an Element being submitted.
 #     puts "Performer: #{request.performer.inspect}"
 #
 #     # If this is an audit request its performer will have an auditor.
 #     #
-#     # In this example, at some point, the vulnerable Link element (the performer)
-#     # will be audited by the XSS check (the auditor).
+#     # In this example, at some point, the vulnerable Link element (the
+#     # performer) will be audited by the XSS check (the auditor).
 #     if request.performer.respond_to? :auditor
 #         auditor = request.performer.auditor
 #
@@ -140,33 +129,47 @@ issue_recheck_options = {
 #     print_request_trace request.trace
 # end
 
-# Simple scan using one of the Introspector helper methods.
 # Runs a scan and give us the usual Arachni::Report, easy peasy.
-report = Introspector.scan_and_report( MyApp, scan_options )
+# Although, **this** report will include some really cool extra goodies.
+report = Introspector.scan_and_report( scan_options )
 
+# Let's see how much of the web application's source code the scan hit, file by
+# file, line by line.
 puts
-
-# Let's see how much of the web application's source code the scan hit.
 print_scan_coverage report.coverage
 
-# Shut the system up again, it'll be quite annoying when fetching context data
-# by rechecking issues.
+# Shut the system up again, it'll be quite annoying during tracing.
 Introspector.disable_output
 
 report.issues.each do |issue|
     puts
     puts '-' * 100
-    puts "Fetching context data for: #{issue.name} in '#{issue.vector.type}' " <<
+    puts "Trace for: #{issue.name} in '#{issue.vector.type}' " <<
              "input '#{issue.affected_input_name}':"
 
-    # Now that we've got some issues let's recheck them with full coverage in
-    # order to get the juicy runtime context.
-    issue = Introspector.recheck_issue(
-        MyApp, issue.variations.first, issue_recheck_options
+    # This is where the real magic happens, this will trace the issue through
+    # the web application's execution flow and provide you with an abundance of
+    # context.
+    #
+    # You can access the, at the time, local and instance variables, evaluate
+    # code, get the location of the vulnerable method etc. -- pretty much the
+    # full stack, with bindings and everything. :)
+    #
+    # An absolute joy for identifying and debugging issues.
+    # (Passing one of those bindings to Pry would be pure gold.)
+    traced_issue = issue.variations.first.with_trace(
+        scope: { path_start_with: APP_PATH }
     )
 
+    # Obviously this won't happen here, but it can happen when tracing issues
+    # from older, imported reports.
+    if !traced_issue
+        puts '  Could not get trace, was the issue fixed?'
+        next
+    end
+
     puts
-    print_request_trace issue.variations.first.request.trace
+    print_request_trace traced_issue.variations.first.request.trace
 end
 
 # And this is what you'll see:

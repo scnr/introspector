@@ -226,18 +226,27 @@ class Scan
         path = @options[:path].to_s
         path = "/#{path}" if !path.start_with?( '/' )
 
+        self.class.reset_options
         Options.update( @options.delete(:framework) || {} )
 
-        Options.url               = "http://#{@host}:#{@port}#{path}"
-        Options.no_fingerprinting = true
-        Options.platforms        |= [Introspector.os, :rack, :ruby]
+        Options.url        = "http://#{@host}:#{@port}#{path}"
+        Options.platforms |= [Introspector.os, :rack, :ruby]
+    end
 
-        # This affects things even though we've overridden the HTTP::Client
-        # interface. For example, it's used by the HTTP::ProxyServer.
-        #
-        # Also, it's good to give the Framework a heads-up.
-        Options.http.request_concurrency = 1
-        Options.http.request_queue_size  = 1
+    class <<self
+
+        # Resets the {Arachni::Options} to values
+        def reset_options
+            Options.reset
+            Options.do_not_fingerprint
+
+            # This affects things even though we've overridden the HTTP::Client
+            # interface. For example, it's used by the HTTP::ProxyServer.
+            #
+            # Also, it's good to give the Framework a heads-up.
+            Options.http.request_concurrency = 1
+            Options.http.request_queue_size  = 1
+        end
     end
 
     def set_framework

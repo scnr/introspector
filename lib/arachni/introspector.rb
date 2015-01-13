@@ -11,8 +11,15 @@ require 'arachni/introspector/scan'
 require 'arachni/introspector/patches/report'
 require 'arachni/introspector/patches/http/client'
 require 'arachni/introspector/patches/http/request'
+require 'arachni/introspector/patches/issue'
 
 class<<self
+
+    # @note If not set, it will be {#detect_application auto-detected}.
+    #
+    # @return   [Class]
+    #   Web application to be scanned
+    attr_accessor :application
 
     # {Scan#start Runs} a {Scan scan}.
     #
@@ -25,8 +32,8 @@ class<<self
     # @return   [Scan, Object]
     #   The completed scan, or the return value of the `block`, if one was
     #   given.
-    def scan( *args, &block )
-        s = Scan.new( *args )
+    def scan( options = {}, &block )
+        s = Scan.new( target_application, options )
         s.start
 
         if block_given?
@@ -50,8 +57,8 @@ class<<self
     #
     # @return   [Scan]
     #   The running scan object.
-    def scan_in_thread( *args, &block )
-        s = Scan.new( *args )
+    def scan_in_thread( options = {}, &block )
+        s = Scan.new( target_application, options )
         s.start_in_thread(&block)
         s
     end
@@ -63,8 +70,8 @@ class<<self
     #
     # @return   [Arachni::Report]
     #   Report for the completed scan.
-    def scan_and_report( *args )
-        s = Scan.new( *args )
+    def scan_and_report( options = {} )
+        s = Scan.new( target_application, options )
         s.start
         s.report
     ensure
@@ -82,8 +89,8 @@ class<<self
     #   {Scan} {Scan#initialize options}.
     #
     # @return   (see Scan#recheck_issue)
-    def recheck_issue( app, issue, options = {} )
-        Scan.new( app, options ).recheck_issue( issue )
+    def recheck_issue( issue, options = {} )
+        Scan.new( target_application, options ).recheck_issue( issue )
     end
 
     # @return   [Symbol]
@@ -110,6 +117,27 @@ class<<self
                     fail Arachni::Platform::Error::Invalid, "Unknown OS: #{host_os}"
             end
         )
+    end
+
+    def target_application
+        @application || detect_application
+    end
+
+    def detect_application
+        return @detected_application if @detected_application
+
+        if defined?( Rails ) && Rails.application
+            return @detected_application = Rails.application
+        end
+
+        if defined?( Sinatra )
+            ObjectSpace.each_object( Class ).select do |klass|
+                next if !(klass < Sinatra::Base) || klass == Sinatra::Application
+                return @detected_application = klass
+            end
+        end
+
+        nil
     end
 
     # Include the {Arachni::UI::CLI}'s {Arachni::UI::Output} interface

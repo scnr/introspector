@@ -6,6 +6,9 @@ describe Arachni::Introspector do
                 checks: ['*'],
                 audit:  {
                     elements: [:links]
+                },
+                browser_cluster: {
+                    pool_size: 0
                 }
             }
         }
@@ -13,8 +16,7 @@ describe Arachni::Introspector do
     let(:application) { XssApp }
 
     before do
-        # No need for browsers in these tests...
-        Arachni::Options.browser_cluster.pool_size = 0
+        described_class.application = application
 
         described_class.clear_os_cache
         @host_os = RbConfig::CONFIG['host_os']
@@ -29,8 +31,41 @@ describe Arachni::Introspector do
         end
 
         Arachni::Framework.reset
-        Arachni::Options.reset
-        @scan = nil
+        described_class::Scan.reset_options
+        described_class.application = @scan = nil
+    end
+
+    expect_it { to respond_to :application }
+    expect_it { to respond_to :application= }
+
+    describe '.target_application' do
+        context 'when .application has been set' do
+            it 'returns it' do
+                described_class.application = 1
+
+                expect(described_class.target_application).to be 1
+            end
+        end
+
+        context 'when .application has not been set' do
+            it 'returns .detect_application' do
+                described_class.application = nil
+
+                allow(described_class).to receive(:detect_application) { :app }
+
+                expect(described_class.target_application).to be :app
+            end
+        end
+    end
+
+    describe '.detect_application' do
+        context 'Rails' do
+            it 'automatically detects the application'
+        end
+
+        context 'Sinatra' do
+            it 'automatically detects the application'
+        end
     end
 
     describe '.os' do
@@ -86,13 +121,16 @@ describe Arachni::Introspector do
                     checks: 'xss',
                     audit: {
                         elements: [:links]
+                    },
+                    browser_cluster: {
+                        pool_size: 0
                     }
                 }
             }
         end
 
         it 'starts a scan' do
-            @scan = subject.scan( application, options )
+            @scan = subject.scan( options )
 
             expect(@scan.status).to be :done
             expect(@scan.report.issues).to be_any
@@ -100,25 +138,25 @@ describe Arachni::Introspector do
 
         context 'when a block is given' do
             it 'cleans up the environment after it calls it' do
-                subject.scan( application, options ) do |scan|
+                subject.scan( options ) do |scan|
                     expect(scan).to receive(:clean_up)
                 end
             end
 
             it 'calls it after the scan completes' do
-                subject.scan( application, options ) do |scan|
+                subject.scan( options ) do |scan|
                     expect(scan).to be_done
                 end
             end
 
             it 'passes the scan to it' do
-                subject.scan( application, options ) do |scan|
+                subject.scan( options ) do |scan|
                     expect(scan).to be_kind_of described_class::Scan
                 end
             end
 
             it 'returns the block return value' do
-                expect(subject.scan( application, options ) { :stuff }).to be :stuff
+                expect(subject.scan( options ) { :stuff }).to be :stuff
             end
         end
     end
@@ -130,20 +168,23 @@ describe Arachni::Introspector do
                     checks: 'xss',
                     audit: {
                         elements: [:links]
+                    },
+                    browser_cluster: {
+                        pool_size: 0
                     }
                 }
             }
         end
 
         it 'starts the scan in a thread' do
-            @scan = subject.scan_in_thread( application, options )
+            @scan = subject.scan_in_thread( options )
             @scan.thread.join
             expect(@scan).to be_done
         end
 
         context 'when a block has been given' do
             it 'is called once the scan finishes' do
-                subject.scan_in_thread( application, options ) do |scan|
+                subject.scan_in_thread( options ) do |scan|
                     @scan = scan
                     expect(@scan).to be_kind_of described_class::Scan
                     expect(@scan).to be_done
@@ -159,37 +200,44 @@ describe Arachni::Introspector do
                     checks: 'xss',
                     audit: {
                         elements: [:links]
+                    },
+                    browser_cluster: {
+                        pool_size: 0
                     }
                 }
             }
         end
 
         it 'performs a scan and returns the report' do
-            report = described_class.scan_and_report( application, options )
+            report = described_class.scan_and_report( options )
             expect(report.issues).to be_any
         end
 
         it 'cleans up the environment' do
             expect_any_instance_of(described_class::Scan).to receive(:clean_up)
 
-            described_class.scan_and_report( application, options )
+            described_class.scan_and_report( options )
         end
     end
 
     describe '.recheck_issue' do
         let(:issue) do
-            described_class.scan_and_report( application, options ).issues.first.variations.first
+            described_class.scan_and_report( options ).issues.
+                first.variations.first
         end
 
         context 'when the issue still exists' do
             it 'returns the reproduced issue' do
-                expect(subject.recheck_issue( application, issue, options )).to eq issue
+                expect(subject.recheck_issue( issue, options )).to eq issue
             end
         end
 
         context 'when the issue does not still exist' do
             it 'returns nil' do
-                expect(subject.recheck_issue( EmptyApp, issue, options )).to be_nil
+                i = issue
+
+                described_class.application = EmptyApp
+                expect(subject.recheck_issue( i, options )).to be_nil
             end
         end
     end

@@ -6,16 +6,14 @@ describe Arachni::Introspector::Scan do
                 checks: ['*'],
                 audit:  {
                     elements: [:links]
+                },
+                browser_cluster: {
+                    pool_size: 0
                 }
             }
         }
     }
     let(:application) { XssApp }
-
-    before do
-        # No need for browsers in these tests...
-        Arachni::Options.browser_cluster.pool_size = 0
-    end
 
     after do
         if @subject
@@ -24,7 +22,7 @@ describe Arachni::Introspector::Scan do
         end
 
         Arachni::Framework.reset
-        Arachni::Options.reset
+        described_class.reset_options
         @subject = nil
     end
 
@@ -66,6 +64,9 @@ describe Arachni::Introspector::Scan do
                 {
                     framework: {
                         checks: 'xss'
+                    },
+                    browser_cluster: {
+                        pool_size: 0
                     }
                 }
             end
@@ -169,6 +170,9 @@ describe Arachni::Introspector::Scan do
                         audit: {
                             elements: [:links]
                         }
+                    },
+                    browser_cluster: {
+                        pool_size: 0
                     }
                 }
             end
@@ -208,6 +212,9 @@ describe Arachni::Introspector::Scan do
             {
                 framework: {
                     checks: 'xss'
+                },
+                browser_cluster: {
+                    pool_size: 0
                 }
             }
         end
@@ -270,7 +277,7 @@ describe Arachni::Introspector::Scan do
                 issue = subject.report.issues.first.variations.first
                 subject.clean_up
 
-                @subject = described_class.new( application )
+                @subject = described_class.new( application, options )
                 expect(@subject.recheck_issue( issue )).to eq issue
             end
         end
