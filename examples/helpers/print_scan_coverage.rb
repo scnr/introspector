@@ -59,7 +59,7 @@ def print_scan_coverage( coverage )
             legend = ' '
             if line.state == :hit
                 legend = '+'
-            elsif line.state == :miss
+            elsif line.state == :missed
                 legend = '-'
             end
 
