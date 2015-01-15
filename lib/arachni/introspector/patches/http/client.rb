@@ -61,6 +61,7 @@ class Client
             redirects += 1
         end
 
+        # response = run_request( request )
         original_request.handle_response response
 
         false
@@ -76,7 +77,12 @@ class Client
         # overhead.
         begin
             t = Time.now
-            Timeout.timeout request.timeout.to_i / 1_000.0 do
+
+            if request.timeout > 0
+                Timeout.timeout request.timeout.to_i / 1_000.0 do
+                    @service.call response
+                end
+            else
                 @service.call response
             end
 

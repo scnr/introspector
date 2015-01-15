@@ -246,6 +246,10 @@ class Scan
             # Also, it's good to give the Framework a heads-up.
             Options.http.request_concurrency = 1
             Options.http.request_queue_size  = 1
+
+            # Don't use a timeout by default because we've got to use
+            # Timeout.timeout for that which has a considerable overhead.
+            Options.http.request_timeout = -1
         end
     end
 
