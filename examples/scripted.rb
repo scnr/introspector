@@ -1,8 +1,8 @@
-require_relative 'helpers/print_request_trace'
-require_relative 'helpers/print_scan_coverage'
 require 'arachni/introspector'
+require 'arachni/introspector/helpers/output'
 
 include Arachni
+include Introspector::Helpers::Output
 
 # Location of the web application environment loader.
 APP_PATH = "#{File.expand_path( File.dirname(__FILE__) )}/app.rb"
