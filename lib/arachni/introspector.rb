@@ -90,7 +90,10 @@ class<<self
     #
     # @return   (see Scan#recheck_issue)
     def recheck_issue( issue, options = {} )
-        Scan.new( target_application, options ).recheck_issue( issue )
+        s = Scan.new( target_application, options )
+        s.recheck_issue( issue )
+    ensure
+        s.clean_up
     end
 
     # @return   [Symbol]
