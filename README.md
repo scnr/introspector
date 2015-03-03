@@ -57,19 +57,16 @@ _Powered by the [Arachni Web Application Scanner Framework](http://www.arachni-s
 
 ## Installation
 
-Add this line to your application's Gemfile:
+Add these lines to your application's Gemfile:
 
-```ruby
-gem 'arachni-introspector'
-```
+    gem 'arachni-reactor',      github: 'arachni/arachni-reactor', branch: 'experimental'
+    gem 'arachni-rpc',          github: 'arachni/arachni-rpc',     branch: 'experimental'
+    gem 'arachni',              github: 'arachni/arachni',         branch: 'v1.1'
+    gem 'arachni-introspector', git:    'git@github.com:Zapotek/arachni-introspector.git'
 
 And then execute:
 
     bundle
-
-Or install it yourself as:
-
-    gem install arachni-introspector
 
 ## Usage
 
