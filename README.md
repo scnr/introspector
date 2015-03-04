@@ -68,6 +68,19 @@ And then execute:
 
     bundle
 
-## Usage
+## Demos
 
-For usage examples please see the files under the `examples/` directory.
+### Sinatra
+
+A demo Sinatra application can be found at `examples/sinatra/app.rb`, with a
+scanner script at `examples/sinatra/scanner.rb`.
+
+    bundle exec ruby examples/sinatra/scanner.rb
+
+### Rails
+
+A demo Rails application can be found at:
+[https://github.com/Zapotek/arachni-introspector-demo-rails](https://github.com/Zapotek/arachni-introspector-demo-rails)
+
+The scanner script can be found at:
+[https://github.com/Zapotek/arachni-introspector-demo-rails/blob/master/bin/arachni-introspector.rb](https://github.com/Zapotek/arachni-introspector-demo-rails/blob/master/bin/arachni-introspector.rb).
