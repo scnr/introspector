@@ -75,6 +75,16 @@ only way to perform scans and retrieve results is via custom scripts.
 
 For examples of such scripts please see the [Demos](#demos) section.
 
+### Caution
+
+#### Code reloading and other tricks
+
+Do not scan applications under their development environments as these usually
+enable development conveniences such as code-reloading which will severely increase
+scan times.
+
+It is best to scan applications under their optimal settings.
+
 ## Demos
 
 ### Sinatra
