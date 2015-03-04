@@ -68,6 +68,13 @@ And then execute:
 
     bundle
 
+## Usage
+
+There are currently no user interfaces (CLI and WebUI are on the way), hence the
+only way to perform scans and retrieve results is via custom scripts.
+
+For examples of such scripts please see the [Demos](#demos) section.
+
 ## Demos
 
 ### Sinatra
