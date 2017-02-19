@@ -1,0 +1,1091 @@
+# # encoding: utf-8
+#
+# describe SCNR::Engine::HTTP::Client do
+#
+#     before( :all ) do
+#         @opts = SCNR::Engine::Options.instance
+#
+#         Rack::Handler::SCNRIntrospector.run_in_thread Client, {
+#             Host: 'stuff'
+#         }
+#
+#         @url = 'http://stuff'
+#     end
+#     before( :each ) do
+#         @opts.reset
+#         @opts.audit.links = true
+#         @opts.url = @url
+#     end
+#
+#     subject { described_class }
+#     let(:custom_404_url) { @url + '/custom_404/' }
+#
+#     it 'supports gzip content-encoding' do
+#         body = nil
+#         subject.get( @opts.url + 'gzip' ) { |res| body = res.body }
+#         expect(body).to eq 'success'
+#     end
+#
+#     it 'preserves set-cookies' do
+#         body = nil
+#         subject.get( @opts.url + 'set_and_preserve_cookies', update_cookies: true )
+#         expect(subject.cookies.first.value).to eq "=stuf \00 here=="
+#
+#         subject.get( @opts.url + 'cookies' ) { |res| body = res.body }
+#         expect(YAML.load( body )).to eq ({ 'stuff' => "=stuf \00 here==" })
+#     end
+#
+#     describe '#statistics' do
+#         let(:statistics) { subject.statistics }
+#
+#         [:request_count, :response_count, :time_out_count,
+#          :total_responses_per_second, :burst_response_time_sum,
+#          :burst_response_count, :burst_responses_per_second,
+#          :burst_average_response_time, :total_average_response_time,
+#          :max_concurrency].each do |k|
+#             it "includes #{k}" do
+#                 expect(statistics[k]).to eq subject.send(k)
+#             end
+#         end
+#     end
+#
+#     describe 'SCNR::Engine::OptionGroups::HTTP' do
+#         describe '#request_timeout' do
+#             context 'Integer' do
+#                 it 'uses it as an HTTP timeout' do
+#                     @opts.http.request_timeout = 10000000000
+#                     timed_out = false
+#                     subject.request( @url + '/sleep' ) { |res| timed_out = res.timed_out? }
+#                     expect(timed_out).to be_falsey
+#
+#                     @opts.http.request_timeout = 1
+#                     subject.reset
+#                     timed_out = false
+#                     subject.request( @url + '/sleep' ) { |res| timed_out = res.timed_out? }
+#                     expect(timed_out).to be_truthy
+#                 end
+#             end
+#             context 'nil' do
+#                 it 'uses a default timeout setting' do
+#                     timed_out = false
+#                     subject.request( @url + '/sleep' ) { |res| timed_out = res.timed_out? }
+#                     expect(timed_out).to be_falsey
+#                 end
+#             end
+#         end
+#
+#         describe '#authentication_username and #authentication_password' do
+#             it 'uses them globally' do
+#                 SCNR::Engine::Options.http.authentication_username = 'username1'
+#                 SCNR::Engine::Options.http.authentication_password = 'password1'
+#
+#                 # first fail to make sure that our test server is actually working properly
+#                 code                                       = 0
+#                 subject.get( @opts.url + 'auth/weird-chars' ) { |res| code = res.code }
+#                 expect(code).to eq 401
+#
+#                 SCNR::Engine::Options.http.authentication_username,
+#                     SCNR::Engine::Options.http.authentication_password =
+#                     ['u se rname$@#@#%$3#@%@#', 'p a  :wo\'rd$@#@#%$3#@%@#' ]
+#
+#                 response = nil
+#                 subject.get( @opts.url + 'auth/weird-chars' ) { |res| response = res }
+#                 expect(response.code).to eq 200
+#                 expect(response.body).to eq 'authenticated!'
+#             end
+#         end
+#
+#         describe 'user_agent' do
+#             it 'uses the default user-agent setting' do
+#                 body = nil
+#                 subject.get( @opts.url + 'user-agent' ) { |res| body = res.body }
+#                 subject.run
+#
+#                 expect(body).to eq @opts.http.user_agent
+#                 expect(@opts.http.user_agent).to eq SCNR::Engine::OptionGroups::HTTP.defaults[:user_agent]
+#             end
+#             context 'String' do
+#                 it 'uses it as a user-agent' do
+#                     ua = 'my user agent'
+#                     @opts.http.user_agent = ua.dup
+#                     subject.reset
+#
+#                     body = nil
+#                     subject.get( @opts.url + 'user-agent' ) { |res| body = res.body }
+#                     expect(body).to eq ua
+#                 end
+#             end
+#         end
+#
+#         describe '#request_redirect_limit' do
+#             context 'Integer' do
+#                 it 'should not exceed that amount of redirects' do
+#                     @opts.http.request_redirect_limit = 2
+#                     code = nil
+#                     subject.get( @opts.url + 'redirect', follow_location: true ) { |res| code = res.code }
+#                     expect(code).to eq 302
+#
+#                     @opts.http.request_redirect_limit = 10
+#                     subject.reset
+#
+#                     body = nil
+#                     subject.get( @opts.url + 'redirect', follow_location: true ) { |res| body = res.body }
+#                     expect(body).to eq 'This is the end.'
+#                 end
+#             end
+#             context 'nil' do
+#                 it 'uses a default setting' do
+#                     subject.reset
+#
+#                     body = nil
+#                     subject.get( @opts.url + 'redirect', follow_location: true ) { |res| body = res.body }
+#                     expect(body).to eq 'This is the end.'
+#                 end
+#             end
+#         end
+#     end
+#
+#     describe '#sandbox' do
+#         it 'preserves state, runs the block and then restores state' do
+#             expect(subject.cookies).to be_empty
+#             subject.get( @opts.url + 'set_and_preserve_cookies', update_cookies: true )
+#             expect(subject.cookies).to be_any
+#
+#             headers = subject.headers.dup
+#
+#             signals = []
+#             subject.on_complete do |r|
+#                 signals << :out
+#             end
+#
+#             subject.get( @opts.url + 'out', mode: :sync )
+#
+#             subject.sandbox do
+#                 expect(subject.cookies).to be_any
+#                 subject.cookie_jar.clear
+#                 expect(subject.cookies).to be_empty
+#
+#                 expect(subject.headers).to eq headers
+#                 subject.headers['X-Custom'] = 'stuff'
+#                 expect(subject.headers.include?( 'X-Custom' )).to be_truthy
+#
+#                 subject.on_complete do |r|
+#                     signals << :in
+#                 end
+#
+#                 subject.get( @opts.url + 'in', mode: :sync )
+#             end
+#
+#             subject.get( @opts.url + 'out', mode: :sync )
+#
+#             signals.delete( :out )
+#             expect(signals.size).to eq 1
+#
+#             expect(subject.headers.include?( 'X-Custom' )).to be_falsey
+#             expect(subject.cookies).to be_any
+#         end
+#     end
+#
+#     describe '#url' do
+#         it 'returns the URL in opts' do
+#             expect(subject.url).to eq @opts.url.to_s
+#         end
+#     end
+#
+#     describe '#headers' do
+#         it 'provides access to default headers' do
+#             headers = subject.headers
+#             expect(headers['Accept']).to eq 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+#             expect(headers['User-Agent']).to eq 'SCNR/v' + SCNR::Engine::VERSION
+#         end
+#
+#         context "when #{SCNR::Engine::OptionGroups::HTTP}#request_headers is set" do
+#             it 'includes them' do
+#                 @opts.http.request_headers = {
+#                     'User-Agent' => 'My UA',
+#                     'From'       => 'Some dude',
+#                 }
+#                 subject.reset
+#                 headers = subject.headers
+#                 expect(headers['From']).to eq @opts.http.request_headers['From']
+#                 expect(headers['Accept']).to eq 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+#                 expect(headers['User-Agent']).to eq @opts.http.request_headers['User-Agent']
+#             end
+#         end
+#
+#         context 'when the authorized_by option is set' do
+#             it 'includes it in the From field' do
+#                 @opts.authorized_by = 'The Dude'
+#                 subject.reset
+#                 expect(subject.headers['From']).to eq @opts.authorized_by
+#             end
+#         end
+#     end
+#
+#     describe '#cookie_jar' do
+#         it 'provides access to the Cookie-jar' do
+#             expect(subject.cookie_jar.is_a?(SCNR::Engine::HTTP::CookieJar )).to be_truthy
+#         end
+#
+#         context "when #{SCNR::Engine::OptionGroups::HTTP}#cookie_string is set" do
+#             it 'parses the string and add those cookies to the CookieJar' do
+#                 @opts.http.cookie_string = 'my_cookie_name=val1, blah_name=val2, stuff=%25blah, another_name=another_val'
+#                 expect(subject.cookie_jar.cookies).to be_empty
+#                 subject.reset
+#                 cookies = subject.cookie_jar.cookies
+#                 expect(cookies.size).to eq 4
+#                 expect(cookies.first.name).to eq 'my_cookie_name'
+#                 expect(cookies.first.value).to eq 'val1'
+#                 expect(cookies[1].name).to eq 'blah_name'
+#                 expect(cookies[1].value).to eq 'val2'
+#                 expect(cookies[2].name).to eq 'stuff'
+#                 expect(cookies[2].value).to eq '%blah'
+#                 expect(cookies.last.name).to eq 'another_name'
+#                 expect(cookies.last.value).to eq 'another_val'
+#             end
+#         end
+#     end
+#
+#     describe '#cookies' do
+#         it 'returns the current cookies' do
+#             @opts.http.cookie_string = 'my_cookie_name=val1, blah_name=val2, another_name=another_val'
+#             expect(subject.cookie_jar.cookies).to be_empty
+#             subject.reset
+#             expect(subject.cookies.size).to eq 3
+#             expect(subject.cookies).to eq subject.cookie_jar.cookies
+#         end
+#     end
+#
+#     describe '#after_run' do
+#         it 'sets blocks to be called after #run' do
+#             called = false
+#             subject.after_run { called = true }
+#             subject.run
+#             expect(called).to be_truthy
+#
+#             called = false
+#             subject.run
+#             expect(called).to be_falsey
+#         end
+#
+#         context 'when the callback creates new requests' do
+#             it 'run these too' do
+#                 called = false
+#                 subject.after_run do
+#                     subject.get do
+#                         called = true
+#                     end
+#                 end
+#                 subject.run
+#                 expect(called).to be_truthy
+#
+#                 called = false
+#                 subject.run
+#                 expect(called).to be_falsey
+#             end
+#         end
+#
+#         context 'when the callback creates new callbacks' do
+#             it 'run these too' do
+#                 called = false
+#                 subject.after_run do
+#                     subject.after_run { called = true }
+#                 end
+#                 subject.run
+#                 expect(called).to be_truthy
+#             end
+#         end
+#     end
+#
+#     describe '#run' do
+#         it 'performs the queued requests' do
+#             response = nil
+#             subject.request { |r| response = r }
+#
+#             subject.run
+#
+#             expect(response).to be_kind_of SCNR::Engine::HTTP::Response
+#         end
+#
+#         it 'returns true' do
+#             expect(subject.run).to be_truthy
+#         end
+#
+#         it 'calls the after_each_run callbacks EVERY TIME' do
+#             called = false
+#             subject.after_each_run { called = true }
+#             subject.run
+#             expect(called).to be_truthy
+#             called = false
+#             subject.run
+#             expect(called).to be_truthy
+#         end
+#
+#         it 'calculates the burst average response time' do
+#             subject.run
+#             expect(subject.burst_runtime).to be > 0
+#         end
+#
+#         it 'updates burst_response_time_sum, burst_response_count,' +
+#                ' burst_average_response_time and burst_responses_per_second' +
+#                ' during runtime and resets them afterwards' do
+#             expect(subject.total_runtime.to_i).to eq 0
+#             expect(subject.total_average_response_time).to eq 0
+#             expect(subject.total_responses_per_second).to eq 0
+#
+#             expect(subject.burst_response_time_sum).to eq 0
+#             expect(subject.burst_response_count).to eq 0
+#             expect(subject.burst_average_response_time).to eq 0
+#             expect(subject.burst_responses_per_second).to eq 0
+#
+#             total_runtime               = 0
+#             total_average_response_time = 0
+#             total_responses_per_second  = 0
+#
+#             burst_response_time_sum     = 0
+#             burst_response_count        = 0
+#             burst_average_response_time = 0
+#             burst_responses_per_second  = 0
+#
+#             20.times do
+#                 subject.get do
+#                     total_runtime               = subject.total_runtime
+#                     total_average_response_time = subject.total_average_response_time
+#                     total_responses_per_second  = subject.total_responses_per_second
+#
+#                     burst_response_time_sum     = subject.burst_response_time_sum
+#                     burst_response_count        = subject.burst_response_count
+#                     burst_average_response_time = subject.burst_average_response_time
+#                     burst_responses_per_second  = subject.burst_responses_per_second
+#                 end
+#             end
+#
+#             subject.run
+#
+#             expect(total_runtime).to be > 0
+#             expect(total_average_response_time).to be > 0
+#             expect(total_responses_per_second).to be > 0
+#
+#             expect(burst_response_time_sum).to be > 0
+#             expect(burst_response_count).to be > 0
+#             expect(burst_average_response_time).to be > 0
+#             expect(burst_responses_per_second).to be > 0
+#         end
+#
+#         context "when a #{RuntimeError} occurs" do
+#             it 'returns nil' do
+#                 allow(subject.instance).to receive(:client_run){ raise }
+#
+#                 expect(subject.run).to be_nil
+#             end
+#         end
+#     end
+#
+#     describe '#max_concurrency' do
+#         it 'defaults to 14' do
+#             expect(subject.max_concurrency).to eq 14
+#         end
+#     end
+#
+#     describe '#max_concurrency=' do
+#         it 'sets the max_concurrency setting' do
+#             expect(subject.max_concurrency).to_not eq 30
+#             subject.max_concurrency = 30
+#             expect(subject.max_concurrency).to eq 30
+#         end
+#     end
+#
+#     describe '#request' do
+#         it "uses the URL in #{SCNR::Engine::Options}#url as a default" do
+#             url = nil
+#             subject.request{ |res| url = res.url }
+#             subject.run
+#             expect(url.start_with?( @opts.url.to_s )).to be_truthy
+#         end
+#
+#         it 'raises exception when no URL is available' do
+#             @opts.reset
+#             subject.reset
+#             expect { subject.request }.to raise_error
+#         end
+#
+#         it "fills in #{SCNR::Engine::HTTP::Request}#headers_string" do
+#             host = "#{SCNR::Engine::URI(@url).host}:#{SCNR::Engine::URI(@url).port}"
+#             headers = "GET / HTTP/1.1\r\nHost: #{host}\r\nAccept-Encoding: gzip, " +
+#                 "deflate\r\nUser-Agent: SCNR/v#{SCNR::Engine::VERSION}\r\nAccept: text/html," +
+#                 "application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n\r\n"
+#
+#             expect(subject.request( @url, mode: :sync ).request.headers_string).to eq headers
+#         end
+#
+#         it "fills in #{SCNR::Engine::HTTP::Request}#effective_body" do
+#             expect(subject.request( @url,
+#                              body: {
+#                                  '1' => ' 2',
+#                                  ' 3' => '4'
+#                              },
+#                              mode:   :sync,
+#                              method: :post
+#             ).request.effective_body).to eq '1=+2&+3=4'
+#         end
+#
+#         describe ':response_max_size' do
+#             context "when #{SCNR::Engine::OptionGroups::HTTP}#response_max_size is specified" do
+#                 it 'ignores bodies of responses which are larger than specified' do
+#                     @opts.http.response_max_size = 0
+#                     expect(subject.request( @url + '/http_response_max_size',
+#                                      mode: :sync
+#                     ).body).to be_empty
+#
+#                     @opts.http.response_max_size = 1
+#                     expect(subject.request( @url + '/http_response_max_size',
+#                                      mode: :sync
+#                     ).body).to be_empty
+#
+#                     @opts.http.response_max_size = 999999
+#                     expect(subject.request( @url + '/http_response_max_size',
+#                                      mode: :sync
+#                     ).body).to be_empty
+#
+#                     @opts.http.response_max_size = 1000000
+#                     expect(subject.request( @url + '/http_response_max_size',
+#                                      mode: :sync
+#                     ).body).to_not be_empty
+#                 end
+#             end
+#
+#             context 'when specified' do
+#                 it 'ignores bodies of responses which are larger than specified' do
+#                     expect(subject.request( @url + '/http_response_max_size',
+#                                      mode: :sync,
+#                                      response_max_size: 0
+#                     ).body).to be_empty
+#
+#                     expect(subject.request( @url + '/http_response_max_size',
+#                                      mode: :sync,
+#                                      response_max_size: 1
+#                     ).body).to be_empty
+#
+#                     expect(subject.request( @url + '/http_response_max_size',
+#                                      mode: :sync,
+#                                      response_max_size: 999999
+#                     ).body).to be_empty
+#
+#                     expect(subject.request( @url + '/http_response_max_size',
+#                                      mode: :sync,
+#                                      response_max_size: 1000000
+#                     ).body).to_not be_empty
+#                 end
+#             end
+#
+#             context 'by default' do
+#                 it 'does not enforce a limit' do
+#                     expect(subject.request( @url + '/http_response_max_size',
+#                                      mode: :sync
+#                     ).body).to_not be_empty
+#                 end
+#             end
+#         end
+#
+#         describe ':no_cookie_jar' do
+#             context 'true' do
+#                 it 'skips the cookie-jar' do
+#                     body = nil
+#                     subject.request( @url + '/cookies', no_cookie_jar: true ) { |res| body = res.body }
+#                     subject.run
+#                     expect(YAML.load( body )).to eq ({})
+#                 end
+#             end
+#             context 'false' do
+#                 it 'uses the cookie_jar' do
+#                     @opts.http.cookie_string = 'my_cookie_name=val1;blah_name=val2;another_name=another_val'
+#                     expect(subject.cookie_jar.cookies).to be_empty
+#                     subject.reset
+#
+#                     body = nil
+#
+#                     subject.request( @url + '/cookies', no_cookie_jar: false ) { |res| body = res.body }
+#                     subject.run
+#                     expect(YAML.load( body )).to eq({
+#                         'my_cookie_name' => 'val1',
+#                         'blah_name' => 'val2',
+#                         'another_name' => 'another_val'
+#                     })
+#                 end
+#                 context 'when custom cookies are provided' do
+#                     it 'merges them with the cookie_jar and override it' do
+#                         @opts.http.cookie_string = 'my_cookie_name=val1;blah_name=val2;another_name=another_val'
+#                         expect(subject.cookie_jar.cookies).to be_empty
+#                         subject.reset
+#
+#                         body = nil
+#
+#                         custom_cookies = { 'newcookie' => 'newval', 'blah_name' => 'val3' }
+#                         subject.request( @url + '/cookies', cookies: custom_cookies,
+#                                          no_cookie_jar: false ) { |res| body = res.body }
+#                         subject.run
+#                         expect(YAML.load( body )).to eq ({
+#                             'my_cookie_name' => 'val1',
+#                             'blah_name' => 'val3',
+#                             'another_name' => 'another_val',
+#                             'newcookie' => 'newval'
+#                         })
+#                     end
+#                 end
+#             end
+#             context 'nil' do
+#                 it 'defaults to false' do
+#                     @opts.http.cookie_string = 'my_cookie_name=val1;blah_name=val2;another_name=another_val'
+#                     expect(subject.cookie_jar.cookies).to be_empty
+#                     subject.reset
+#
+#                     body = nil
+#
+#                     subject.request( @url + '/cookies' ) { |res| body = res.body }
+#                     subject.run
+#                     expect(YAML.load( body )).to eq ({
+#                         'my_cookie_name' => 'val1',
+#                         'blah_name' => 'val2',
+#                         'another_name' => 'another_val'
+#                     })
+#                 end
+#             end
+#         end
+#
+#         describe ':body' do
+#             it 'uses its value as a request body' do
+#                 req_body = 'heyaya'
+#                 body = nil
+#                 subject.request( @url + '/body', method: :post, body: req_body ) { |res| body = res.body }
+#                 subject.run
+#                 expect(body).to eq req_body
+#             end
+#         end
+#
+#         describe ':method' do
+#             describe 'nil' do
+#                 it 'performs a GET HTTP request' do
+#                     body = nil
+#                     subject.request( @url ) { |res| body = res.body }
+#                     subject.run
+#                     expect(body).to eq 'GET'
+#                 end
+#             end
+#             describe ':get' do
+#                 it 'performs a GET HTTP request' do
+#                     body = nil
+#                     subject.request( @url, method: :get ) { |res| body = res.body }
+#                     subject.run
+#                     expect(body).to eq 'GET'
+#                 end
+#
+#                 context 'when there are both query string and hash params' do
+#                     it 'merges them while giving priority to the hash params' do
+#                         body = nil
+#                         params = {
+#                             'param1' => 'value1_updated',
+#                             'param2' => 'value 2'
+#                         }
+#                         url = @url + '/echo?param1=value1&param3=value3'
+#                         subject.request( url, parameters: params, method: :get ){ |res| body = res.body }
+#                         subject.run
+#                         expect(YAML.load( body )).to eq params.merge( 'param3' => 'value3' )
+#                     end
+#                 end
+#             end
+#             describe ':post' do
+#                 it 'performs a POST HTTP request' do
+#                     body = nil
+#                     subject.request( @url, method: :post ) { |res| body = res.body }
+#                     subject.run
+#                     expect(body).to eq 'POST'
+#                 end
+#             end
+#             describe ':put' do
+#                 it 'performs a PUT HTTP request' do
+#                     body = nil
+#                     subject.request( @url, method: :put ) { |res| body = res.body }
+#                     subject.run
+#                     expect(body).to eq 'PUT'
+#                 end
+#             end
+#             describe ':options' do
+#                 it 'performs a OPTIONS HTTP request' do
+#                     body = nil
+#                     subject.request( @url, method: :options ) { |res| body = res.body }
+#                     subject.run
+#                     expect(body).to eq 'OPTIONS'
+#                 end
+#             end
+#             describe ':delete' do
+#                 it 'performs a POST HTTP request' do
+#                     body = nil
+#                     subject.request( @url, method: :delete ) { |res| body = res.body }
+#                     subject.run
+#                     expect(body).to eq 'DELETE'
+#                 end
+#             end
+#         end
+#
+#         describe ':parameters' do
+#             it 'specifies the query params as a hash' do
+#                 body = nil
+#                 params = { 'param' => 'value' }
+#                 subject.request( @url + '/echo', parameters: params ) { |res| body = res.body }
+#                 subject.run
+#                 expect(params).to eq YAML.load( body )
+#             end
+#
+#             it 'preserves nullbytes' do
+#                 body = nil
+#                 params = { "pa\0ram" => "v\0alue" }
+#                 subject.request( @url + '/echo', parameters: params ) { |res| body = res.body }
+#                 subject.run
+#                 expect(params).to eq YAML.load( body )
+#             end
+#         end
+#
+#         describe ':body' do
+#             it 'properly encodes special characters' do
+#                 body = nil
+#                 params = { '% param\ +=&;' => '% value\ +=&;', 'nil' => nil }
+#                 subject.request( @url + '/echo', method: :post, body: params ) { |res| body = res.body }
+#                 subject.run
+#                 expect(YAML.load( body )).to eq ({ '% param\ +=&;' => '% value\ +=&;', 'nil' => '' })
+#             end
+#
+#             it 'preserves nullbytes' do
+#                 body = nil
+#                 params = { "st\0uff" => "test\0" }
+#                 subject.request( @url + '/echo', method: :post, body: params, ) { |res| body = res.body }
+#                 subject.run
+#                 expect(YAML.load( body )).to eq params
+#             end
+#         end
+#
+#         describe ':timeout' do
+#             describe 'nil' do
+#                 it 'runs without a timeout' do
+#                     timed_out = false
+#                     subject.request( @url + '/sleep' ) { |res| timed_out = res.timed_out? }
+#                     subject.run
+#                     expect(timed_out).to be_falsey
+#                 end
+#             end
+#             describe 'Numeric' do
+#                 it 'sets a timeout value in milliseconds' do
+#                     timed_out = false
+#                     subject.request( @url + '/sleep', timeout: 4_000 ) { |res| timed_out = res.timed_out? }
+#                     subject.run
+#                     expect(timed_out).to be_truthy
+#
+#                     timed_out = false
+#                     subject.request( @url + '/sleep', timeout: 6_000 ) { |res| timed_out = res.timed_out? }
+#                     subject.run
+#                     expect(timed_out).to be_falsey
+#                 end
+#             end
+#         end
+#
+#         describe ':username/:password' do
+#             it 'uses them to authenticate' do
+#                 # first fail to make sure that our test server is actually working properly
+#                 code = 0
+#                 subject.get( @opts.url + 'auth/weird-chars' ) { |res| code = res.code }
+#                 subject.run
+#                 expect(code).to eq 401
+#
+#                 response = nil
+#                 subject.get(
+#                     @opts.url + 'auth/weird-chars',
+#                     username: 'u se rname$@#@#%$3#@%@#',
+#                     password: 'p a  :wo\'rd$@#@#%$3#@%@#' ) { |res| response = res }
+#                 subject.run
+#                 expect(response.code).to eq 200
+#                 expect(response.body).to eq 'authenticated!'
+#             end
+#         end
+#
+#         describe ':cookies' do
+#             it 'preserves nullbytess' do
+#                 cookies = { "name\0" => "val\0" }
+#                 body = nil
+#                 subject.request( @url + '/cookies', cookies: cookies ) { |res| body = res.body }
+#                 subject.run
+#                 expect(YAML.load( body )).to eq cookies
+#             end
+#
+#             describe 'nil' do
+#                 it 'uses te cookies in the CookieJar' do
+#                     @opts.http.cookie_string = 'my_cookie_name=val1, blah_name=val2, another_name=another_val'
+#                     expect(subject.cookie_jar.cookies).to be_empty
+#                     subject.reset
+#
+#                     body = nil
+#                     subject.request( @url + '/cookies' ) { |res| body = res.body }
+#                     subject.run
+#                     expect(YAML.load( body )).to eq ({
+#                         'my_cookie_name' => 'val1',
+#                         'blah_name' => 'val2',
+#                         'another_name' => 'another_val'
+#                     })
+#                 end
+#
+#                 it 'only sends the appropriate cookies for the domain' do
+#                     cookies = []
+#                     cookies << SCNR::Engine::Element::Cookie.new(
+#                         url:    'http://test.com',
+#                         inputs: { 'key1' => 'val1' }
+#                     )
+#                     cookies << SCNR::Engine::Element::Cookie.new(
+#                         url:    @url,
+#                         inputs: { 'key2' => 'val2' }
+#                     )
+#
+#                     subject.cookie_jar.update( cookies )
+#                     body = nil
+#                     subject.request( @url + '/cookies' ) { |res| body = res.body }
+#                     subject.run
+#                     expect(YAML.load( body )).to eq ({ 'key2' => 'val2' })
+#                 end
+#             end
+#
+#             describe 'Hash' do
+#                 it 'uses the key-value pairs as cookies' do
+#                     cookies = { 'name' => 'val' }
+#                     body = nil
+#                     subject.request( @url + '/cookies', cookies: cookies ) { |res| body = res.body }
+#                     subject.run
+#                     expect(YAML.load( body )).to eq cookies
+#                 end
+#
+#                 it 'merges them with the cookie-jar' do
+#                     @opts.http.cookie_string = 'my_cookie_name=val1, blah_name=val2, another_name=another_val'
+#                     expect(subject.cookie_jar.cookies).to be_empty
+#                     subject.reset
+#
+#                     body = nil
+#                     subject.request(
+#                         @url + '/cookies',
+#                         cookies: {
+#                             'my_cookie_name' => 'updated_val'
+#                         }
+#                     ) { |res| body = res.body }
+#                     subject.run
+#
+#                     expect(YAML.load( body )).to eq ({
+#                         'my_cookie_name' => 'updated_val',
+#                         'blah_name' => 'val2',
+#                         'another_name' => 'another_val'
+#                     })
+#                 end
+#
+#                 context 'when also given a Cookie header' do
+#                     it 'merges them, giving priority to the Hash' do
+#                         cookies = { 'name' => 'val' }
+#                         options = {
+#                             cookies: cookies,
+#                             headers: {
+#                                 'Cookie' => 'test=1;name=2'
+#                             }
+#                         }
+#
+#                         body = nil
+#                         subject.request( @url + '/cookies', options ) { |res| body = res.body }
+#                         subject.run
+#
+#                         expect(YAML.load( body )).to eq ({ 'test' => '1', 'name' => 'val' })
+#                     end
+#                 end
+#             end
+#         end
+#
+#         describe ':mode' do
+#             describe 'nil' do
+#                 it 'performs the request asynchronously' do
+#                     performed = false
+#                     subject.request( @url ) { performed = true }
+#                     subject.run
+#                     expect(performed).to be_truthy
+#                 end
+#             end
+#             describe ':async' do
+#                 it 'performs the request asynchronously' do
+#                     performed = false
+#                     subject.request( @url, mode: :async ) { performed = true }
+#                     subject.run
+#                     expect(performed).to be_truthy
+#                 end
+#             end
+#             describe ':sync 'do
+#                 it 'performs the request synchronously and returns the response' do
+#                     expect(subject.request( @url, mode: :sync )).to be_kind_of SCNR::Engine::HTTP::Response
+#                 end
+#
+#                 it 'assigns a #request to the returned response' do
+#                     expect(subject.request( @url, mode: :sync ).request).to be_kind_of SCNR::Engine::HTTP::Request
+#                 end
+#
+#                 context 'when a block is given' do
+#                     it 'passes the response to it as well' do
+#                         called = []
+#                         response = subject.request( @url, mode: :sync ) do |r|
+#                             called << r
+#                         end
+#
+#                         expect(response).to be_kind_of SCNR::Engine::HTTP::Response
+#                         expect(called).to eq [response]
+#                     end
+#                 end
+#             end
+#         end
+#
+#         describe ':headers' do
+#             describe 'nil' do
+#                 it 'uses the default headers' do
+#                     body = nil
+#                     subject.request( @url + '/headers' ) { |res| body = res.body }
+#                     subject.run
+#                     sent_headers = YAML.load( body )
+#                     subject.headers.each { |k, v| expect(sent_headers[k]).to eq v }
+#                 end
+#             end
+#
+#             describe 'Hash' do
+#                 it 'merges them with the default headers' do
+#                     headers = { 'My-Header' => 'my value'}
+#                     body = nil
+#                     subject.request( @url + '/headers', headers: headers ) { |res| body = res.body }
+#                     subject.run
+#                     sent_headers = YAML.load( body )
+#                     subject.headers.merge( headers ).each { |k, v| expect(sent_headers[k]).to eq v }
+#                 end
+#             end
+#         end
+#
+#         describe ':update_cookies' do
+#             describe 'nil' do
+#                 it 'skips the cookie_jar' do
+#                     cookies = []
+#                     cookies << SCNR::Engine::Element::Cookie.new(
+#                         url: @url,
+#                         inputs: { 'key2' => 'val2' }
+#                     )
+#                     subject.update_cookies( cookies )
+#                     subject.request( @url + '/update_cookies' )
+#                     subject.run
+#                     expect(subject.cookies).to eq cookies
+#                 end
+#             end
+#
+#             describe 'false' do
+#                 it 'skips the cookie_jar' do
+#                     cookies = []
+#                     cookies << SCNR::Engine::Element::Cookie.new(
+#                         url: @url,
+#                         inputs: { 'key2' => 'val2' }
+#                     )
+#                     subject.update_cookies( cookies )
+#                     subject.request( @url + '/update_cookies', update_cookies: false )
+#                     subject.run
+#                     expect(subject.cookies).to eq cookies
+#                 end
+#             end
+#
+#             describe 'true' do
+#                 it 'updates the cookie_jar' do
+#                     cookies = []
+#                     cookies << SCNR::Engine::Element::Cookie.new(
+#                         url:    @url,
+#                         name:   'key2',
+#                         value:  'val2',
+#                         domain: SCNR::URI(@url ).domain
+#                     )
+#                     subject.update_cookies( cookies )
+#                     subject.request( @url + '/update_cookies', update_cookies: true )
+#                     subject.run
+#                     expect(subject.cookies.first.value).to eq cookies.first.value + ' [UPDATED!]'
+#                 end
+#             end
+#         end
+#
+#         describe ':follow_location' do
+#             describe 'nil' do
+#                 it 'ignores redirects' do
+#                     res = nil
+#                     subject.request( @url + '/follow_location' ) { |c_res| res = c_res }
+#                     subject.run
+#
+#                     expect(res.url.start_with?( @url + '/follow_location' )).to be_truthy
+#                     expect(res.body).to be_empty
+#                 end
+#             end
+#             describe 'false' do
+#                 it 'ignores redirects' do
+#                     res = nil
+#                     subject.request( @url + '/follow_location', follow_location: false ) { |c_res| res = c_res }
+#                     subject.run
+#
+#                     expect(res.url.start_with?( @url + '/follow_location' )).to be_truthy
+#                     expect(res.body).to be_truthy
+#                 end
+#             end
+#             describe 'true' do
+#                 it 'follows redirects' do
+#                     res = nil
+#                     subject.request( @url + '/follow_location', follow_location: true ) { |c_res| res = c_res }
+#                     subject.run
+#
+#                     expect(res.url).to eq @url + '/redir_2'
+#                     expect(res.body).to eq 'Welcome to redir_2!'
+#                 end
+#             end
+#         end
+#
+#         context 'when cookie-jar lookup fails' do
+#             it 'only uses the given cookies' do
+#                 @opts.http.cookie_string = 'my_cookie_name=val1;blah_name=val2;another_name=another_val'
+#                 expect(subject.cookie_jar.cookies).to be_empty
+#                 subject.reset
+#                 expect(subject.cookie_jar.cookies).to be_any
+#
+#                 allow(subject.cookie_jar).to receive(:for_url) { raise }
+#
+#                 body = nil
+#                 subject.request(
+#                     @url + '/cookies',
+#                     cookies: { 'blah' => 'val' }
+#                 ) { |res| body = res.body }
+#                 subject.run
+#
+#                 expect(YAML.load( body )).to eq ({ 'blah' => 'val' })
+#             end
+#         end
+#     end
+#
+#     describe '#get' do
+#         it 'queues a GET request' do
+#             body = nil
+#             subject.get { |res| body = res.body }
+#             subject.run
+#             expect(body).to eq  'GET'
+#         end
+#     end
+#
+#     describe '#trace' do
+#         it 'queues a TRACE request' do
+#             expect(subject.trace.method).to be :trace
+#         end
+#     end
+#
+#     describe '#post' do
+#         it 'queues a POST request' do
+#             body = nil
+#             subject.post { |res| body = res.body }
+#             subject.run
+#             expect(body).to eq 'POST'
+#         end
+#
+#         it 'passes :parameters as a #request :body' do
+#             body = nil
+#             params = { '% param\ +=&;' => '% value\ +=&;', 'nil' => nil }
+#             subject.post( @url + '/echo', parameters: params ) { |res| body = res.body }
+#             subject.run
+#             expect(YAML.load( body )).to eq ({ '% param\ +=&;' => '% value\ +=&;', 'nil' => '' })
+#         end
+#     end
+#
+#     describe '#cookie' do
+#         it 'queues a GET request' do
+#             body = nil
+#             cookies = { 'name' => "v%+;al\00=" }
+#             subject.cookie( @url + '/cookies', parameters: cookies ) { |res| body = res.body }
+#             subject.run
+#             expect(YAML.load( body )).to eq cookies
+#         end
+#     end
+#
+#     describe '#headers' do
+#         it 'queues a GET request' do
+#             body = nil
+#             headers = { 'name' => 'val' }
+#             subject.header( @url + '/headers', parameters: headers ) { |res| body = res.body }
+#             subject.run
+#             expect(YAML.load( body )['Name']).to eq headers.values.first
+#         end
+#     end
+#
+#     describe '#queue' do
+#         it 'queues a request' do
+#             r = nil
+#
+#             request = SCNR::Engine::HTTP::Request.new(url: @url )
+#             request.on_complete do |response|
+#                 r = response
+#             end
+#
+#             subject.queue request
+#             subject.run
+#
+#             expect(r).to be_kind_of SCNR::Engine::HTTP::Response
+#         end
+#     end
+#
+#     describe '#update_cookies' do
+#         it 'updates the cookies' do
+#             cookies = []
+#             cookies << SCNR::Engine::Element::Cookie.new(
+#                 url: @url,
+#                 inputs: { 'key2' => 'val2' }
+#             )
+#
+#             expect(subject.cookies).to be_empty
+#             subject.update_cookies( cookies )
+#             expect(subject.cookies).to eq cookies
+#         end
+#     end
+#
+#     describe '#on_new_cookies' do
+#         it 'adds blocks to be called when new cookies arrive' do
+#             cookies = []
+#             cookies << SCNR::Engine::Element::Cookie.new(
+#                 url:    @url,
+#                 inputs: { 'name' => 'value' }
+#             )
+#             res = SCNR::Engine::HTTP::Response.new(url: @url, headers: { 'Set-Cookie' => 'name=value' } )
+#
+#             callback_cookies  = nil
+#             callback_response = nil
+#             subject.on_new_cookies do |cookies, res|
+#                 callback_cookies  = cookies
+#                 callback_response = res
+#             end
+#             subject.parse_and_set_cookies( res )
+#
+#             expect(callback_cookies).to eq cookies
+#             expect(callback_response).to eq res
+#         end
+#     end
+#
+#     describe '#parse_and_set_cookies' do
+#         it 'updates the cookies from a response and call on_new_cookies blocks' do
+#             cookies = []
+#             cookies << SCNR::Engine::Element::Cookie.new(
+#                 url:    @url,
+#                 inputs: { 'name' => 'value' }
+#             )
+#             res = SCNR::Engine::HTTP::Response.new(url: @url, headers: { 'Set-Cookie' => 'name=value' } )
+#
+#             expect(@opts.http.cookies).to be_empty
+#             expect(subject.cookies).to be_empty
+#             subject.parse_and_set_cookies( res )
+#             expect(subject.cookies).to eq cookies
+#         end
+#     end
+#
+#     describe '.info' do
+#         it 'returns a hash with an output name' do
+#             expect(described_class.info[:name]).to eq 'HTTP'
+#         end
+#     end
+# end

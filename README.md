@@ -1,9 +1,7 @@
-# Arachni::Introspector
+# SCNR::Introspector
 
-The Arachni Introspector provides an Interactive Application Security Testing (IAST)
+The SCNR::Introspector provides an Interactive Application Security Testing (IAST)
 solution for Rack-based web applications like Ruby-on-Rails, Sinatra, Merb, etc.
-
-_Powered by the [Arachni Web Application Scanner Framework](http://www.arachni-scanner.com)._
 
 ## Features
 
@@ -59,10 +57,7 @@ _Powered by the [Arachni Web Application Scanner Framework](http://www.arachni-s
 
 Add these lines to your application's Gemfile:
 
-    gem 'arachni-reactor',      github: 'arachni/arachni-reactor', branch: 'experimental'
-    gem 'arachni-rpc',          github: 'arachni/arachni-rpc',     branch: 'experimental'
-    gem 'arachni',              github: 'arachni/arachni',         branch: 'v1.1'
-    gem 'arachni-introspector', git:    'git@github.com:Zapotek/arachni-introspector.git'
+    gem 'scnr-introspector'
 
 And then execute:
 
@@ -96,8 +91,6 @@ scanner script at `examples/sinatra/scanner.rb`.
 
 ### Rails
 
-A demo Rails application can be found at:
-[https://github.com/Zapotek/arachni-introspector-demo-rails](https://github.com/Zapotek/arachni-introspector-demo-rails)
+A demo Rails application can be found at: `scnr-introspector-demo-rails`
 
-The scanner script can be found at:
-[https://github.com/Zapotek/arachni-introspector-demo-rails/blob/master/bin/arachni-introspector.rb](https://github.com/Zapotek/arachni-introspector-demo-rails/blob/master/bin/arachni-introspector.rb).
+The scanner script can be found at: `scnr-introspector-demo-rails/bin/scnr-introspector.rb`

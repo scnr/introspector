@@ -18,8 +18,7 @@ group :prof do
     gem 'ruby-mass'
 end
 
-gem 'arachni-reactor', github: 'arachni/arachni-reactor', branch: 'experimental'
-gem 'arachni-rpc',     github: 'arachni/arachni-rpc',     branch: 'experimental'
-gem 'arachni',         github: 'arachni/arachni',         branch: 'v1.1'
+gem 'scnr-ui-cli', path: '../ui-cli'
+gem 'scnr-engine', path: '../engine'
 
 gemspec

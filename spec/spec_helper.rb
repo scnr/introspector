@@ -1,15 +1,14 @@
 require 'simplecov'
 require 'faker'
-require 'arachni/introspector'
+require 'scnr/introspector'
 
 # Enable extra output options in order to get full coverage...
-Arachni::UI::Output.verbose_on
-Arachni::UI::Output.debug_on( 3 )
-# ...but don't actually print anything.
-Arachni::UI::Output.mute
+# SCNR::UI::CLI::Output.verbose_on
+# SCNR::UI::CLI::Output.debug_on( 999999 )
+# SCNR::UI::CLI::Output.mute
 
 # Uncomment to show output from spawned processes.
-Arachni::Processes::Manager.preserve_output
+SCNR::Engine::Processes::Manager.preserve_output
 
 RSpec.configure do |config|
     config.treat_symbols_as_metadata_keys_with_true_values = true
@@ -75,13 +74,10 @@ RSpec::Core::MemoizedHelpers.module_eval do
     alias to_not should_not
 end
 
-# arachni_root_dir = Gem::Specification.find_by_name( 'arachni' ).gem_dir
-arachni_root_dir = "#{File.dirname(__FILE__)}/../../arachni/"
-support_path     = "#{arachni_root_dir}/spec/support"
+engine_root_dir = Gem::Specification.find_by_name( 'scnr-engine' ).gem_dir
+support_path    = "#{engine_root_dir}/spec/support"
 
 require "#{support_path}/lib/factory"
 Dir.glob( "#{support_path}/{factories}/**/*.rb" ).each { |f| require f }
 
 Dir.glob( "#{File.dirname( __FILE__ )}/support/{lib,helpers,shared,factories,webapps}/**/*.rb" ).each { |f| require f }
-
-require "#{arachni_root_dir}/ui/cli/output"

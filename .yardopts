@@ -1,7 +1,7 @@
 --no-private
 --markup=markdown
 --verbose
---title "Arachni Introspector"
+--title "SCNR::Introspector"
 lib/**/*.rb
 rack/**/*.rb
 -

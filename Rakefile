@@ -7,7 +7,7 @@ RSpec::Core::RakeTask.new(:spec)
 desc 'Generate docs.'
 task :docs do
 
-    outdir = "../arachni-introspector-docs"
+    outdir = "../scnr-introspector-docs"
     sh "rm -rf #{outdir}"
     sh "mkdir -p #{outdir}"
 

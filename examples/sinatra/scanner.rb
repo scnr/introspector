@@ -1,7 +1,7 @@
-require 'arachni/introspector'
-require 'arachni/introspector/helpers/output'
+require 'scnr/introspector'
+require 'scnr/introspector/helpers/output'
 
-include Arachni
+include SCNR
 include Introspector::Helpers::Output
 
 # Location of the web application environment loader.
@@ -19,7 +19,7 @@ require APP_PATH
 #
 #   Introspector.application = MyApp
 
-# Include the Arachni::UI::CLI's Arachni::UI::Output interface to show how the
+# Include the SCNR::UI::CLI's SCNR::UI::Output interface to show how the
 # Introspector's behavior fits in with the usual Framework scan process.
 #
 # This is also **very** helpful during development and debugging.
@@ -78,9 +78,7 @@ scan_options = {
         }
     },
 
-    # Framework (scanner) options.
-    # (see http://www.rubydoc.info/github/Arachni/arachni/Arachni/Options#update-instance_method)
-    framework: {
+    scanner: {
 
         audit: {
             # We only care about links in our example.
@@ -129,7 +127,7 @@ scan_options = {
 #     print_request_trace request.trace
 # end
 
-# Runs a scan and give us the usual Arachni::Report, easy peasy.
+# Runs a scan and give us the usual SCNR::Report, easy peasy.
 # Although, **this** report will include some really cool extra goodies.
 report = Introspector.scan_and_report( scan_options )
 
@@ -176,7 +174,7 @@ end
 #
 # 100.0% coverage
 # ----------------------------------------------------------------------------------------------------
-# -- /home/zapotek/workspace/arachni-introspector/examples/app.rb
+# -- /home/zapotek/workspace/scnr-introspector/examples/app.rb
 # ---- Total:    25
 # ---- Skipped:  15
 # ---- Hit:      10 (100.0%)
@@ -211,7 +209,7 @@ end
 # ----------------------------------------------------------------------------------------------------
 # Fetching context data for: Cross-Site Scripting (XSS) in 'link' input 'v':
 #
-# [1] [+0] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/arachni-introspector/examples/app.rb:13 MyApp#GET / call in MyApp#HEAD /
+# [1] [+0] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/scnr-introspector/examples/app.rb:13 MyApp#GET / call in MyApp#HEAD /
 #     get '/' do
 #
 # "LOCAL VARIABLES"
@@ -237,7 +235,7 @@ end
 #                      "HTTP_VERSION" => "HTTP/1.1",
 #                       "REMOTE_ADDR" => "localhost",
 #                       "HTTP_ACCEPT" => "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-#                   "HTTP_USER_AGENT" => "Arachni/v2.0dev",
+#                   "HTTP_USER_AGENT" => "SCNR/v2.0dev",
 #                   "SERVER_PROTOCOL" => "HTTP/1.1",
 #                      "rack.version" => "[1, 3]",
 #                        "rack.input" => "#<StringIO:0x000000049edac8>",
@@ -263,19 +261,19 @@ end
 #         "blah" => "foo"
 #     }
 # }
-# [2] [+0.000361505] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/arachni-introspector/examples/app.rb:13 MyApp#HEAD / b_call in MyApp#HEAD /
+# [2] [+0.000361505] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/scnr-introspector/examples/app.rb:13 MyApp#HEAD / b_call in MyApp#HEAD /
 #     get '/' do
 #
-# [3] [+0.000231479] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/arachni-introspector/examples/app.rb:14 MyApp#HEAD / line in MyApp#HEAD /
+# [3] [+0.000231479] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/scnr-introspector/examples/app.rb:14 MyApp#HEAD / line in MyApp#HEAD /
 #         @instance_variable = {
 #
-# [4] [+0.000201383] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/arachni-introspector/examples/app.rb:17 MyApp#HEAD / line in MyApp#HEAD /
+# [4] [+0.000201383] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/scnr-introspector/examples/app.rb:17 MyApp#HEAD / line in MyApp#HEAD /
 #         local_variable = 1
 #
-# [5] [+0.000155073] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/arachni-introspector/examples/app.rb:19 MyApp#HEAD / line in MyApp#HEAD /
+# [5] [+0.000155073] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/scnr-introspector/examples/app.rb:19 MyApp#HEAD / line in MyApp#HEAD /
 #         <<EOHTML
 #
-# [6] [+0.000182906] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/arachni-introspector/examples/app.rb:8 MyApp#process_params call in MyApp#process_params@/home/zapotek/workspace/arachni-introspector/examples/app.rb:8
+# [6] [+0.000182906] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/scnr-introspector/examples/app.rb:8 MyApp#process_params call in MyApp#process_params@/home/zapotek/workspace/scnr-introspector/examples/app.rb:8
 #     def process_params( params )
 #
 # "LOCAL VARIABLES"
@@ -285,19 +283,19 @@ end
 #         "v" => "stuff<some_dangerous_input_39a1723e5d93bf73e212d57281539bb5/>"
 #     }
 # }
-# [7] [+0.000182013] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/arachni-introspector/examples/app.rb:9 MyApp#process_params line in MyApp#process_params@/home/zapotek/workspace/arachni-introspector/examples/app.rb:8
+# [7] [+0.000182013] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/scnr-introspector/examples/app.rb:9 MyApp#process_params line in MyApp#process_params@/home/zapotek/workspace/scnr-introspector/examples/app.rb:8
 #         noop
 #
-# [8] [+0.000208563] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/arachni-introspector/examples/app.rb:5 MyApp#noop call in MyApp#noop@/home/zapotek/workspace/arachni-introspector/examples/app.rb:5
+# [8] [+0.000208563] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/scnr-introspector/examples/app.rb:5 MyApp#noop call in MyApp#noop@/home/zapotek/workspace/scnr-introspector/examples/app.rb:5
 #     def noop
 #
 # "LOCAL VARIABLES"
 # "--------------------------------------------------------------------------------"
 # {}
-# [9] [+0.000212117] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/arachni-introspector/examples/app.rb:6 MyApp#noop return in MyApp#noop@/home/zapotek/workspace/arachni-introspector/examples/app.rb:5
+# [9] [+0.000212117] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/scnr-introspector/examples/app.rb:6 MyApp#noop return in MyApp#noop@/home/zapotek/workspace/scnr-introspector/examples/app.rb:5
 #     end
 #
-# [10] [+0.000202927] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/arachni-introspector/examples/app.rb:10 MyApp#process_params line in MyApp#process_params@/home/zapotek/workspace/arachni-introspector/examples/app.rb:8
+# [10] [+0.000202927] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/scnr-introspector/examples/app.rb:10 MyApp#process_params line in MyApp#process_params@/home/zapotek/workspace/scnr-introspector/examples/app.rb:8
 #         params.values.join( ' ' )
 #
 # "LOCAL VARIABLES"
@@ -307,22 +305,22 @@ end
 #         "v" => "stuff<some_dangerous_input_39a1723e5d93bf73e212d57281539bb5/>"
 #     }
 # }
-# [11] [+0.00018936] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/arachni-introspector/examples/app.rb:10 Hash#values c_call in MyApp#process_params@/home/zapotek/workspace/arachni-introspector/examples/app.rb:8
+# [11] [+0.00018936] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/scnr-introspector/examples/app.rb:10 Hash#values c_call in MyApp#process_params@/home/zapotek/workspace/scnr-introspector/examples/app.rb:8
 #         params.values.join( ' ' )
 #
-# [12] [+0.000177726] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/arachni-introspector/examples/app.rb:10 Hash#values c_return in MyApp#process_params@/home/zapotek/workspace/arachni-introspector/examples/app.rb:8
+# [12] [+0.000177726] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/scnr-introspector/examples/app.rb:10 Hash#values c_return in MyApp#process_params@/home/zapotek/workspace/scnr-introspector/examples/app.rb:8
 #         params.values.join( ' ' )
 #
-# [13] [+0.000190877] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/arachni-introspector/examples/app.rb:10 Array#join c_call in MyApp#process_params@/home/zapotek/workspace/arachni-introspector/examples/app.rb:8
+# [13] [+0.000190877] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/scnr-introspector/examples/app.rb:10 Array#join c_call in MyApp#process_params@/home/zapotek/workspace/scnr-introspector/examples/app.rb:8
 #         params.values.join( ' ' )
 #
-# [14] [+0.00018111] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/arachni-introspector/examples/app.rb:10 Array#join c_return in MyApp#process_params@/home/zapotek/workspace/arachni-introspector/examples/app.rb:8
+# [14] [+0.00018111] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/scnr-introspector/examples/app.rb:10 Array#join c_return in MyApp#process_params@/home/zapotek/workspace/scnr-introspector/examples/app.rb:8
 #         params.values.join( ' ' )
 #
-# [15] [+0.000188217] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/arachni-introspector/examples/app.rb:11 MyApp#process_params return in MyApp#process_params@/home/zapotek/workspace/arachni-introspector/examples/app.rb:8
+# [15] [+0.000188217] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/scnr-introspector/examples/app.rb:11 MyApp#process_params return in MyApp#process_params@/home/zapotek/workspace/scnr-introspector/examples/app.rb:8
 #     end
 #
-# [16] [+0.00018215] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/arachni-introspector/examples/app.rb:23 MyApp#HEAD / b_return in MyApp#HEAD /
+# [16] [+0.00018215] [2015-01-10 02:10:13 +0200] /home/zapotek/workspace/scnr-introspector/examples/app.rb:23 MyApp#HEAD / b_return in MyApp#HEAD /
 #     end
 #
 # "LOCAL VARIABLES"
