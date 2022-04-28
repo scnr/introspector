@@ -127,36 +127,33 @@ module Output
     def print_request_trace( trace )
         return if !trace
 
-        last_timestamp          = nil
         last_instance_variables = nil
-        last_local_variables    = nil
 
         trace.points.each.with_index do |point, i|
-            time_diff = last_timestamp ? point.timestamp - last_timestamp : 0
-
-            puts "[#{i + 1}] [+#{time_diff}] #{point.inspect}"
+            puts "[#{i + 1}] #{point.inspect}"
             if File.exist? point.path
                 puts "#{IO.read( point.path ).lines[point.line_number-1]}"
             end
             puts
 
-            if frame = point.stack_frame
+            if (frame = point.stack_frame)
                 local_variables    = frame.local_variables
                 instance_variables = frame.instance_variables
 
-                if local_variables != last_local_variables
-                    ap 'LOCAL VARIABLES'
-                    ap '-' * 80
-                    ap local_variables.my_stringify
+                if local_variables.any?
+                    puts "\tLOCAL VARIABLES"
+                    puts "\t" + ('-' * 80)
+                    puts "\t" + local_variables.my_stringify.to_s
+                    puts
                 end
 
                 if instance_variables != last_instance_variables
-                    ap 'INSTANCE VARIABLES'
-                    ap '~' * 80
-                    ap instance_variables.my_stringify
+                    puts "\tINSTANCE VARIABLES"
+                    puts "\t" + ('~' * 80)
+                    puts "\t" + instance_variables.my_stringify.to_s
+                    puts
                 end
 
-                last_local_variables    = frame.local_variables
                 last_instance_variables = frame.instance_variables
             end
 

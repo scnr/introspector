@@ -74,7 +74,7 @@ class Point
     end
 
     def inspect
-        "[#{timestamp}] #{path}:#{line_number} #{class_name}##{method_name} " +
+        "#{path}:#{line_number} #{class_name}##{method_name} " +
             "#{event} in #{stack_frame.inspect}"
     end
 
