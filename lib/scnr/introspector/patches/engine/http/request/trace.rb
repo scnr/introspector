@@ -65,17 +65,38 @@ class Trace
         self
     end
 
-    def marshal_dump
-        instance_variables.inject( {} ) do |h, iv|
-            h[iv.to_s.gsub('@','')] = instance_variable_get( iv )
-            h
+    def to_rpc_data
+        data = {}
+        instance_variables.each do |iv|
+            case iv
+                when :@points
+                    data['points'] = @points.map(&:to_rpc_data)
+
+                when :@scope
+                    next
+
+                else
+                    data[iv.to_s.gsub('@','')] = instance_variable_get( iv ).to_rpc_data_or_self
+
+            end
         end
+        data
     end
 
-    def marshal_load( h )
-        h.each { |k, v| instance_variable_set( "@#{k}", v ) }
-        points.each { |point| point.trace = self }
-        self
+    def self.from_rpc_data( h )
+        n = self.new
+
+        h.each do |k, v|
+            case k
+                when 'points'
+                    n.instance_variable_set( "@#{k}", v.map { |pd| Point.from_rpc_data( pd ).tap { |p| p.trace = n } } )
+
+                else
+                    n.instance_variable_set( "@#{k}", v )
+            end
+        end
+
+        n
     end
 
     private

@@ -86,7 +86,7 @@ class Scan
 
         @scanner.checks.clear
 
-        issue.recheck @scanner
+        issue.recheck
     ensure
         stop_app
     end
@@ -254,7 +254,7 @@ class Scan
     end
 
     def set_framework
-        @scanner = Engine::Framework.new
+        @scanner = Engine::Framework.unsafe
 
         @scanner.checks.load Engine::Options.checks
         UNLOAD_CHECKS.each { |c| @scanner.checks.unload c }

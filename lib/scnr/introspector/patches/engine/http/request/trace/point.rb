@@ -102,6 +102,17 @@ class Point
         h.each { |k, v| instance_variable_set( "@#{k}", v ) }
     end
 
+    def to_rpc_data
+        marshal_dump.merge( 'timestamp' => timestamp.to_s )
+    end
+
+    def self.from_rpc_data( data )
+        n = self.new
+        n.marshal_load( data )
+        n.timestamp = Time.new( n.timestamp )
+        n
+    end
+
     class <<self
 
         # Provides out-of-instance storage for non-serializable bindings.

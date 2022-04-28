@@ -18,6 +18,7 @@ group :prof do
     gem 'ruby-mass'
 end
 
+gem 'scnr-application', path: '../application'
 gem 'scnr-ui-cli', path: '../ui-cli'
 gem 'scnr-engine', path: '../engine'
 

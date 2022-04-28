@@ -88,7 +88,7 @@ scan_options = {
         # The simple XSS check will do.
         checks: ['xss'],
 
-        browser_cluster: {
+        dom: {
             # Don't initialize any browsers, they're not needed for this example.
             # Wouldn't make any difference during the scan, but makes boot-up faster.
             pool_size: 0
@@ -155,7 +155,7 @@ report.issues.each do |issue|
     #
     # An absolute joy for identifying and debugging issues.
     # (Passing one of those bindings to Pry would be pure gold.)
-    traced_issue = issue.variations.first.with_trace(
+    traced_issue = issue.with_trace(
         scope: { path_start_with: APP_PATH }
     )
 
@@ -167,7 +167,7 @@ report.issues.each do |issue|
     end
 
     puts
-    print_request_trace traced_issue.variations.first.request.trace
+    print_request_trace traced_issue.request.trace
 end
 
 # And this is what you'll see:
