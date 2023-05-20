@@ -32,21 +32,9 @@ class<<self
     # @return   [Scan, Object]
     #   The completed scan, or the return value of the `block`, if one was
     #   given.
-    def scan( options = {}, &block )
+    def scan( options = {} )
         s = Scan.new( target_application, options )
         s.start
-
-        if block_given?
-            r = nil
-            begin
-                r = block.call( s )
-            ensure
-                s.clean_up
-            end
-
-            return r
-        end
-
         s
     end
 
@@ -146,12 +134,6 @@ class<<self
     # Include the {SCNR::UI::CLI}'s {SCNR::UI::Output} interface
     # to show scan messages.
     def enable_output
-        @with_output_interface ||= Gem::Specification.each do |spec|
-            next if spec.name != 'scnr'
-            require "#{spec.gem_dir}/ui/cli/output"
-            break
-        end
-
         SCNR::UI::CLI::Output.unmute
     end
 

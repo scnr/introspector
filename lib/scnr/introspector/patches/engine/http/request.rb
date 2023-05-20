@@ -59,14 +59,14 @@ class Request
 
     alias :old_to_rpc_data :to_rpc_data
     def to_rpc_data
-        old_to_rpc_data.merge( 'trace' => trace.to_rpc_data )
+        old_to_rpc_data.merge( 'trace' => trace&.to_rpc_data )
     end
 
     class <<self
         alias :old_from_rpc_data :from_rpc_data
         def from_rpc_data( data )
             r = old_from_rpc_data( data )
-            r.trace = Trace.from_rpc_data( data['trace'] )
+            r.trace = Trace.from_rpc_data( data['trace'] ) if data['trace']
             r
         end
     end

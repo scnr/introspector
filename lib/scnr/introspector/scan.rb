@@ -8,12 +8,6 @@ class Scan
     extend Forwardable
 
     class Error < Introspector::Error
-        class Inactive < Error
-        end
-
-        class Dirty < Error
-        end
-
         class StillRunning < Error
         end
 
@@ -80,15 +74,17 @@ class Scan
     # @raise    [Error::StillRunning]
     #   If the scan is still running.
     def recheck_issue( issue )
-        fail_if_still_running
+        fail_if_running
 
         start_app
 
         @scanner.checks.clear
 
-        issue.recheck
-    ensure
+        i = issue.recheck
+
         stop_app
+
+        i
     end
 
     # @note **Do not** forget to call {#clean_up} once you have finished
@@ -100,25 +96,23 @@ class Scan
     #
     # @raise    [Error::StillRunning]
     #   If the scan is running.
-    # @raise    [Error::Dirty]
-    #   If the scan has already been used.
     def start
-        fail_if_still_running
-        fail_if_dirty
+        fail_if_running
 
         @active = true
 
         start_app
 
         @scanner.run
+        @active = false
 
         if @coverage
             @coverage.retrieve_results
         end
 
-        nil
-    ensure
         stop_app
+
+        nil
     end
 
     # Starts the scan in a {#thread} and blocks until it starts.
@@ -129,8 +123,7 @@ class Scan
     # @return   [Thread]
     #   Scan {#thread}.
     def start_in_thread( &block )
-        fail_if_still_running
-        fail_if_dirty
+        fail_if_running
 
         @thread = Thread.new do
             start
@@ -138,7 +131,7 @@ class Scan
             @thread = nil
         end
 
-        sleep 0.1 while status == :ready
+        sleep 0.1 while status == :running
         @thread
     end
 
@@ -153,7 +146,7 @@ class Scan
     #
     # @raise    [Error::Inactive]
     def abort
-        @scanner.abort
+        @scanner.abort!
         stop_app
     end
 
@@ -167,7 +160,7 @@ class Scan
         return if @cleaned_up
         @cleaned_up = true
 
-        fail_if_still_running
+        fail_if_running
 
         @scanner.clean_up
         @scanner.reset
@@ -193,25 +186,17 @@ class Scan
     end
 
     def pause
-        @pause_id = @scanner.pause(:introspector )
+        @scanner.pause!
     end
 
     def resume
-        @scanner.resume @pause_id
+        @scanner.resume!
     end
 
     private
 
-    def fail_if_still_running
-        fail Error::StillRunning if running? && status != :ready && status != :done
-    end
-
-    def fail_if_inactive
-        fail Error::Inactive if !@active
-    end
-
-    def fail_if_dirty
-        fail Error::Dirty if @active
+    def fail_if_running
+        fail Error::StillRunning if @active
     end
 
     def start_app

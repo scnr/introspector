@@ -7,7 +7,7 @@ describe SCNR::Introspector do
                 audit:  {
                     elements: [:links]
                 },
-                browser_cluster: {
+                dom: {
                     pool_size: 0
                 }
             }
@@ -122,7 +122,7 @@ describe SCNR::Introspector do
                     audit: {
                         elements: [:links]
                     },
-                    browser_cluster: {
+                    dom: {
                         pool_size: 0
                     }
                 }
@@ -135,30 +135,6 @@ describe SCNR::Introspector do
             expect(@scan.status).to be :done
             expect(@scan.report.issues).to be_any
         end
-
-        context 'when a block is given' do
-            it 'cleans up the environment after it calls it' do
-                subject.scan( options ) do |scan|
-                    expect(scan).to receive(:clean_up)
-                end
-            end
-
-            it 'calls it after the scan completes' do
-                subject.scan( options ) do |scan|
-                    expect(scan).to be_done
-                end
-            end
-
-            it 'passes the scan to it' do
-                subject.scan( options ) do |scan|
-                    expect(scan).to be_kind_of described_class::Scan
-                end
-            end
-
-            it 'returns the block return value' do
-                expect(subject.scan( options ) { :stuff }).to be :stuff
-            end
-        end
     end
 
     describe '.scan_in_thread' do
@@ -169,7 +145,7 @@ describe SCNR::Introspector do
                     audit: {
                         elements: [:links]
                     },
-                    browser_cluster: {
+                    dom: {
                         pool_size: 0
                     }
                 }
@@ -188,7 +164,7 @@ describe SCNR::Introspector do
                     @scan = scan
                     expect(@scan).to be_kind_of described_class::Scan
                     expect(@scan).to be_done
-                end
+                end.thread.join
             end
         end
     end
@@ -201,7 +177,7 @@ describe SCNR::Introspector do
                     audit: {
                         elements: [:links]
                     },
-                    browser_cluster: {
+                    dom: {
                         pool_size: 0
                     }
                 }

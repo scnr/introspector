@@ -80,9 +80,9 @@ class Client
             t = Time.now
 
             if request.timeout > 0
-                Timeout.timeout request.timeout.to_i / 1_000.0 do
+                # Timeout.timeout request.timeout.to_i / 1_000.0 do
                     @service.call response
-                end
+                # end
             else
                 @service.call response
             end

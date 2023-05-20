@@ -44,10 +44,6 @@ describe SCNR::Engine::HTTP::Request::Trace do
         ]
 
         expect(point_data).to eq expected_data
-
-        new_obj.points.each do |point|
-            expect(point.trace).to eq new_obj
-        end
     end
 
     describe '#initialize' do

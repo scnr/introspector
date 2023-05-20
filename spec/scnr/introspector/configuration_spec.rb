@@ -22,7 +22,7 @@ describe SCNR::Introspector::Configuration do
                         elements: [ :links ]
                     },
                     checks: ['xss'],
-                    browser_cluster: {
+                    dom: {
                         pool_size: 0
                     }
                 }

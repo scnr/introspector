@@ -6,7 +6,7 @@ describe SCNR::Engine::Issue do
                 audit:  {
                     elements: [:links]
                 },
-                browser_cluster: {
+                dom: {
                     pool_size: 0
                 }
             }
