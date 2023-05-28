@@ -1,3 +1,4 @@
+require 'pry'
 require 'scnr/introspector'
 require 'scnr/introspector/helpers/output'
 
@@ -7,168 +8,80 @@ include Introspector::Helpers::Output
 # Location of the web application environment loader.
 APP_PATH = "#{File.expand_path( File.dirname(__FILE__) )}/app.rb"
 
+# Introspection and scan options.
+OPTIONS = {
+
+  # Scan coverage provides simple, high-level coverage data, it includes
+  # file paths and the source lines that were executed.
+  coverage: {
+    scope: {
+      # Only keep track of webapp code.
+      path_start_with: APP_PATH
+    },
+  },
+
+  # Tracing HTTP::Request operations can provide a much more in-depth
+  # look into the web application's behavior; this is very useful when
+  # resolving logged issues.
+  trace: {
+    scope: {
+      # Only keep track of webapp code.
+      path_start_with: APP_PATH
+    }
+  },
+
+  scan: {
+    audit: {
+      # We only care about links in our example.
+      elements: [:links]
+    },
+
+    # The simple XSS check will do.
+    checks: ['xss'],
+
+    # We don't need any browsers for this particular scan.
+    dom: {
+      pool_size: 0
+    }
+  }
+}
+
 # Enable coverage tracking of the web application's source code.
-# (This must be called prior to loading the application environment.)
 Introspector::Scan::Coverage.enable
 
 # Include the web application and its environment.
 require APP_PATH
 
-# The application will be auto-detected right before a scan starts, you can,
-# however, specify it explicitly if you wish:
-#
-#   Introspector.application = MyApp
-
-# Include the SCNR::UI::CLI's SCNR::UI::Output interface to show how the
-# Introspector's behavior fits in with the usual Framework scan process.
-#
-# This is also **very** helpful during development and debugging.
-Introspector.enable_output
-
-# In case you're the curious type:
-# UI::Output.debug( 3 )
-
-scan_options = {
-
-    # Scan coverage provides simple, high-level coverage data, it includes
-    # file paths and the source lines that were executed.
-    #
-    # Requires `Introspector::Scan::Coverage.enable` to have been called,
-    # otherwise it will have no effect.
-    coverage: {
-        scope: {
-
-            # Only keep track of webapp code.
-            #
-            # This will exclude library calls and will keep the entries short
-            # and sweet and to the point.
-            path_start_with: APP_PATH
-        },
-    },
-
-    # Tracing HTTP::Request operations can provide a much more in-depth
-    # look into the web application's behavior; this is very useful when
-    # resolving logged issues.
-    #
-    # However, it is a bad idea to enable it during the scan, as it can result
-    # in a x10 performance decrease (this is a demo so we're alright :)).
-    #
-    # Also, if `Introspector::Scan::Coverage.enable` has been called, tracing
-    # can cause segfaults (in this simple demo though it'll be OK).
-    #
-    # To disable request tracing, simply avoid setting the `:trace` key
-    # for this configuration Hash.
-    #
-    # In general. this option should only be enabled when rechecking issues,
-    # so as to fetch the necessary context as required.
-    #
-    # Although, if you do need to track overall scan coverage in depth, you
-    # can configure the scope here and then monitor HTTP::Client traffic to
-    # retrieve it for each request (an example will follow).
-    trace: {
-        scope: {
-
-            # Only keep track of webapp code.
-            #
-            # This will exclude library calls and will keep the instrumentation
-            # and trace points short and sweet and to the point.
-            #
-            # Not to mention the huge effect it'll have on performance.
-            path_start_with: APP_PATH
-        }
-    },
-
-    scanner: {
-
-        audit: {
-            # We only care about links in our example.
-            elements: [:links]
-        },
-
-        # The simple XSS check will do.
-        checks: ['xss'],
-
-        dom: {
-            # Don't initialize any browsers, they're not needed for this example.
-            # Wouldn't make any difference during the scan, but makes boot-up faster.
-            pool_size: 0
-        }
-    }
-}
-
-
-# You can hook into the HTTP::Client interface to monitor all responses and
-# keep track of the effects of their requests, given that request tracing has
-# been enabled.
-#
-# Or, you may just want to keep a close eye on the scan from an HTTP perspective,
-# which you can do, as each HTTP::Request includes a sort of breadcrumb to the
-# entities which had a hand it.
-
-# HTTP::Client.on_complete do |response|
-#     request = response.request
-#
-#     # The performer can be any entity, although it usually is either the
-#     # Framework, a Browser or an Element being submitted.
-#     puts "Performer: #{request.performer.inspect}"
-#
-#     # If this is an audit request its performer will have an auditor.
-#     #
-#     # In this example, at some point, the vulnerable Link element (the
-#     # performer) will be audited by the XSS check (the auditor).
-#     if request.performer.respond_to? :auditor
-#         auditor = request.performer.auditor
-#
-#         puts "Auditor:   #{auditor.class.fullname}"
-#         puts "Found in:  #{auditor.page.inspect}"
-#     end
-#
-#     # Print the effect our request had on the web application.
-#     print_request_trace request.trace
-# end
-
 # Runs a scan and give us the usual SCNR::Report, easy peasy.
 # Although, **this** report will include some really cool extra goodies.
-report = Introspector.scan_and_report( scan_options )
+report = Introspector.scan_and_report( OPTIONS )
 
 # Let's see how much of the web application's source code the scan hit, file by
 # file, line by line.
 puts
 print_scan_coverage report.coverage
 
-# Shut the system up again, it'll be quite annoying during tracing.
+# Shut the system up, it'll be quite annoying during tracing.
 Introspector.disable_output
 
-report.issues.each do |issue|
-    puts
-    puts '-' * 100
-    puts "Trace for: #{issue.name} in '#{issue.vector.type}' " <<
-             "input '#{issue.affected_input_name}':"
+# Will be an XSS issue.
+issue = report.issues.first
 
-    # This is where the real magic happens, this will trace the issue through
-    # the web application's execution flow and provide you with an abundance of
-    # context.
-    #
-    # You can access the, at the time, local and instance variables, evaluate
-    # code, get the location of the vulnerable method etc. -- pretty much the
-    # full stack, with bindings and everything. :)
-    #
-    # An absolute joy for identifying and debugging issues.
-    # (Passing one of those bindings to Pry would be pure gold.)
-    traced_issue = issue.with_trace(
-        scope: { path_start_with: APP_PATH }
-    )
+puts
+puts '-' * 100
+puts "Trace for: #{issue.name} in '#{issue.vector.type}' input '#{issue.affected_input_name}':"
 
-    # Obviously this won't happen here, but it can happen when tracing issues
-    # from older, imported reports.
-    if !traced_issue
-        puts '  Could not get trace, was the issue fixed?'
-        next
-    end
+# This is where the real magic happens, this will trace the issue through
+# the web application's execution flow and provide you with an abundance of
+# context.
+# An absolute joy for identifying and debugging issues.
+traced_issue = issue.with_trace( scope: { path_start_with: APP_PATH } )
 
-    puts
-    print_request_trace traced_issue.request.trace
-end
+puts
+print_request_trace traced_issue.request.trace
+
+# Re-enter the context the webapp was in during its vulnerable state with pry.
+traced_issue.request.trace.points.last.context.pry
 
 # And this is what you'll see:
 #

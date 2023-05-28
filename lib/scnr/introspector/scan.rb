@@ -212,7 +212,7 @@ class Scan
         path = "/#{path}" if !path.start_with?( '/' )
 
         self.class.reset_options
-        Engine::Options.update( @options.delete(:scanner) || {} )
+        Engine::Options.update( @options.delete(:scan) || {} )
 
         Engine::Options.url        = "http://#{@host}:#{@port}#{path}"
         Engine::Options.platforms |= [Introspector.os, :rack, :ruby]

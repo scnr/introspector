@@ -1,3 +1,5 @@
+require 'pp'
+
 module SCNR
 module Introspector
 module Helpers
@@ -143,14 +145,14 @@ module Output
                 if local_variables.any?
                     puts "\tLOCAL VARIABLES"
                     puts "\t" + ('-' * 80)
-                    puts "\t" + local_variables.my_stringify.to_s
+                    pp local_variables.my_stringify
                     puts
                 end
 
                 if instance_variables != last_instance_variables
                     puts "\tINSTANCE VARIABLES"
                     puts "\t" + ('~' * 80)
-                    puts "\t" + instance_variables.my_stringify.to_s
+                    pp instance_variables.my_stringify
                     puts
                 end
 
