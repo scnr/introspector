@@ -1,5 +1,5 @@
 module SCNR
-module Introspector
+class Introspector
     VERSION = '1.0dev'
 end
 end

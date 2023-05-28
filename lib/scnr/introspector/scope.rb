@@ -1,7 +1,5 @@
 module SCNR
-module Introspector
-class Scan
-class Coverage
+class Introspector
 class Scope
 
     class Error < Introspector::Error
@@ -100,7 +98,5 @@ class Scope
 
 end
 
-end
-end
 end
 end

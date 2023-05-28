@@ -1,11 +1,8 @@
-require 'coverage'
-require 'scnr/introspector/patches/engine/http/request/trace/scope'
-require 'scnr/introspector/patches/engine/http/request/trace/point'
+require 'scnr/introspector/trace/scope'
+require 'scnr/introspector/trace/point'
 
 module SCNR
-module Engine
-module HTTP
-class Request
+class Introspector
 
 class Trace
 
@@ -28,14 +25,14 @@ class Trace
     def initialize( options = {}, &block )
         options = options.dup
 
-        if (scope = options.delete(:scope)).is_a? Request::Trace::Scope
+        if (scope = options.delete(:scope)).is_a? Trace::Scope
             @scope = scope
         elsif scope.is_a? Hash
-            @scope = Request::Trace::Scope.new( scope )
+            @scope = Trace::Scope.new( scope )
         elsif scope.nil?
-            @scope = Request::Trace::Scope.new
+            @scope = Trace::Scope.new( Configuration.options[:scope] )
         else
-            fail Request::Trace::Scope::Error::Invalid
+            fail Trace::Scope::Error::Invalid
         end
 
         @with_context = options[:with_context]
@@ -75,8 +72,10 @@ class Trace
                 when :@scope
                     next
 
-                else
-                    data[iv.to_s.gsub('@','')] = instance_variable_get( iv ).to_rpc_data_or_self
+            else
+                v = instance_variable_get( iv )
+                next if !v
+                data[iv.to_s.gsub('@','')] = v.to_rpc_data
 
             end
         end
@@ -115,7 +114,5 @@ class Trace
 
 end
 
-end
-end
 end
 end

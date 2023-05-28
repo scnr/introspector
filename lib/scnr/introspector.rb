@@ -1,87 +1,72 @@
 require 'rbconfig'
-require 'scnr/ui/cli'
+require 'pp'
 
 module SCNR
-module Introspector
+class Introspector
 
-require 'scnr/introspector/version'
-require 'scnr/introspector/error'
-require 'scnr/introspector/configuration'
-require 'scnr/introspector/scan'
-require 'scnr/introspector/patches/engine/report'
-require 'scnr/introspector/patches/engine/http/client'
-require 'scnr/introspector/patches/engine/http/request'
-require 'scnr/introspector/patches/engine/issue'
+    require 'scnr/introspector/version'
+    require 'scnr/introspector/error'
+    require 'scnr/introspector/configuration'
+    require 'scnr/introspector/scope'
+    require 'scnr/introspector/trace'
+    require 'scnr/introspector/coverage'
 
-class<<self
+    Coverage.enable
 
-    # @note If not set, it will be {#detect_application auto-detected}.
-    #
-    # @return   [Class]
-    #   Web application to be scanned
-    attr_accessor :application
+    class <<self
+        def trace
+            @trace ||= {}
+        end
 
-    # {Scan#start Runs} a {Scan scan}.
-    #
-    # @param    (see Scan#initialize)
-    # @param    [Block] block
-    #   If a block is given, it will be passed the {Scan scan} object
-    #   once the scan completes and then {Scan#clean_up clean-up} the
-    #   environment.
-    #
-    # @return   [Scan, Object]
-    #   The completed scan, or the return value of the `block`, if one was
-    #   given.
-    def scan( options = {} )
-        s = Scan.new( target_application, options )
-        s.start
-        s
+        def trace=( t )
+            @trace = t
+        end
+
+        def trace_to_json
+            JSON.pretty_generate trace.inject( {} ) { |h, (k, v)| h[k] = v.to_rpc_data; h }
+        end
     end
 
-    # {Scan#start_in_thread Runs} a {Scan scan} in its own {Scan#thread thread}.
-    #
-    # @param    (see Scan#initialize)
-    # @param    (see Scan#start_in_thread)
-    #
-    # @return   [Scan]
-    #   The running scan object.
-    def scan_in_thread( options = {}, &block )
-        s = Scan.new( target_application, options )
-        s.start_in_thread(&block)
-        s
+    def initialize( app, options = {} )
+        @app     = app
+        @options = options
     end
 
-    # {Scan#start Runs} a {Scan scan}, returns the {Scan#report report} and
-    # {Scan#clean_up cleans-up} the environment.
-    #
-    # @param    (see Scan#initialize)
-    #
-    # @return   [SCNR::Report]
-    #   Report for the completed scan.
-    def scan_and_report( options = {} )
-        s = Scan.new( target_application, options )
-        s.start
-        s.report
-    ensure
-        s.clean_up
+    def call( env )
+        if id = env['HTTP_SCNR_INTROSPECTOR_TRACE']
+            response = nil
+            self.class.trace[id] = Trace.new @options do
+                response = @app.call( env )
+            end
+            response
+        elsif r = serve( env )
+            r
+        else
+            @app.call( env )
+        end
+
+    rescue => e
+        pp e
+        pp e.backtrace
     end
 
-    # {Scan#start Runs} a {Scan scan}, returns the {Scan#report report} and
-    # {Scan#clean_up cleans-up} the environment.
-    #
-    # @param    [#call] app
-    #   Rack-app.
-    # @param    [SCNR::Issue] issue
-    #   Issue to recheck.
-    # @param    [Hash] options
-    #   {Scan} {Scan#initialize options}.
-    #
-    # @return   (see Scan#recheck_issue)
-    def recheck_issue( issue, options = {} )
-        s = Scan.new( target_application, options )
-        s.recheck_issue( issue )
-    ensure
-        s.clean_up
+    def serve( env )
+        body = nil
+        case env['REQUEST_PATH']
+        when '/scnr/introspector/trace'
+            body = self.class.trace_to_json
+
+        when '/scnr/introspector/coverage'
+            nil
+
+        when '/scnr/introspector/platforms'
+            JSON.pretty_generate( [os] )
+
+        else
+            return nil
+        end
+
+        [200, { 'Content-Type' => 'application.json' }, [body]]
     end
 
     # @return   [Symbol]
@@ -105,51 +90,11 @@ class<<self
                     :solaris
 
                 else
-                    fail SCNR::Engine::Platform::Error::Invalid, "Unknown OS: #{host_os}"
+                    nil
             end
         )
     end
 
-    def target_application
-        @application || detect_application
-    end
-
-    def detect_application
-        return @detected_application if @detected_application
-
-        if defined?( Rails ) && Rails.application
-            return @detected_application = Rails.application
-        end
-
-        if defined?( Sinatra )
-            ObjectSpace.each_object( Class ).select do |klass|
-                next if !(klass < Sinatra::Base) || klass == Sinatra::Application
-                return @detected_application = klass
-            end
-        end
-
-        nil
-    end
-
-    # Include the {SCNR::UI::CLI}'s {SCNR::UI::Output} interface
-    # to show scan messages.
-    def enable_output
-        SCNR::UI::CLI::Output.unmute
-    end
-
-    # Mutes the {SCNR::UI::Output} interface.
-    #
-    # @see #enable_output
-    def disable_output
-        SCNR::UI::CLI::Output.mute
-    end
-
-    # @private
-    def clear_os_cache
-        @os = nil
-    end
-
-end
 
 end
 end

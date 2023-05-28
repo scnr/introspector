@@ -1,9 +1,7 @@
 require 'binding_of_caller'
 
 module SCNR
-module Engine
-module HTTP
-class Request
+class Introspector
 class Trace
 class Point
 
@@ -105,8 +103,6 @@ class StackFrame
     end
 end
 
-end
-end
 end
 end
 end

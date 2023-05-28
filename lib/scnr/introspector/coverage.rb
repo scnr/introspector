@@ -1,10 +1,8 @@
 require 'coverage'
-require 'scnr/introspector/scan/coverage/resource'
-require 'scnr/introspector/scan/coverage/scope'
+require 'scnr/introspector/coverage/resource'
 
 module SCNR
-module Introspector
-class Scan
+class Introspector
 class Coverage
 
     class <<self
@@ -97,6 +95,5 @@ class Coverage
 
 end
 
-end
 end
 end

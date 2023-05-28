@@ -1,8 +1,7 @@
-require 'scnr/introspector/scan/coverage/resource/line'
+require 'scnr/introspector/coverage/resource/line'
 
 module SCNR
-module Introspector
-class Scan
+class Introspector
 class Coverage
 
 class Resource
@@ -86,7 +85,6 @@ class Resource
 
 end
 
-end
 end
 end
 end

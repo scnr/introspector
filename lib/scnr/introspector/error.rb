@@ -1,5 +1,5 @@
 module SCNR
-module Introspector
+class Introspector
 
 class Error < StandardError
 end

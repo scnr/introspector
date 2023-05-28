@@ -1,7 +1,7 @@
 require 'singleton'
 
 module SCNR
-module Introspector
+class Introspector
 
 class Configuration
     include Singleton
@@ -10,11 +10,6 @@ class Configuration
     DEFAULT_LOCATION = "#{Dir.pwd}/#{DEFAULT_FILENAME}"
 
     # @return   [Hash]
-    #   {Scan} options, along with `:application`, holding the Rack application
-    #   class.
-    #
-    #   Not used anywhere implicitly, just a way to store configuration options
-    #   to be shared between config files and user interfaces.
     attr_accessor :options
 
     class <<self

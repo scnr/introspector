@@ -1,6 +1,10 @@
+require 'scnr/introspector'
 require 'sinatra/base'
 
 class MyApp < Sinatra::Base
+    use SCNR::Introspector, scope: {
+      path_start_with: __FILE__
+    }
 
     def noop
     end
@@ -22,4 +26,5 @@ class MyApp < Sinatra::Base
 EOHTML
     end
 
+    run!
 end

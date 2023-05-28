@@ -1,9 +1,7 @@
-require 'scnr/introspector/patches/engine/http/request/trace/point/stack_frame'
+require 'scnr/introspector/trace/point/stack_frame'
 
 module SCNR
-module Engine
-module HTTP
-class Request
+class Introspector
 class Trace
 
 # Trace point, similar in function to a native Ruby TracePoint.
@@ -161,8 +159,6 @@ class Point
 
 end
 
-end
-end
 end
 end
 end

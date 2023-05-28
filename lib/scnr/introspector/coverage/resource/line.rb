@@ -1,6 +1,5 @@
 module SCNR
-module Introspector
-class Scan
+class Introspector
 class Coverage
 class Resource
 
@@ -83,7 +82,6 @@ class Line
 
 end
 
-end
 end
 end
 end
