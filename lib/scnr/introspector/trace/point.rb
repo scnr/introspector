@@ -1,5 +1,3 @@
-require 'scnr/introspector/trace/point/stack_frame'
-
 module SCNR
 class Introspector
 class Trace
@@ -7,10 +5,6 @@ class Trace
 # Trace point, similar in function to a native Ruby TracePoint.
 # Points to a code execution {#event}.
 class Point
-
-    # @return   [Integer]
-    #   Unique ID.
-    attr_reader   :id
 
     # @return   [Trace]
     #   Parent coverage.
@@ -42,46 +36,20 @@ class Point
 
     # @param    [Hash]  options
     def initialize( options = {} )
-        @id = self.class.increment_id
-
         options.each do |k, v|
             next if v.nil?
 
             send( "#{k}=", v )
         end
-
-        stack_frame
-    end
-
-    # @return   [StackFrame, nil]
-    #   Associated {StackFrame} or `nil` when not available (when running under
-    #   JRuby, for example).
-    def stack_frame
-        return if !context
-        @stack_frame ||= StackFrame.new( self )
-    end
-
-    def has_stack_frame?
-        !!stack_frame
-    end
-
-    # @return   [Binding]
-    #   Associated binding.
-    def context
-        self.class.bindings[@id]
     end
 
     def inspect
-        "#{path}:#{line_number} #{class_name}##{method_name} " +
-            "#{event} in #{stack_frame.inspect}"
+        "#{path}:#{line_number} #{class_name}##{method_name} #{event}"
     end
 
     def marshal_dump
         trace_point  = @trace_point
         @trace_point = nil
-
-        stack_frame  = @stack_frame
-        @stack_frame = nil
 
         trace  = @trace
         @trace = nil
@@ -92,7 +60,6 @@ class Point
         end
     ensure
         @trace_point = trace_point
-        @stack_frame = stack_frame
         @trace       = trace
     end
 
@@ -113,21 +80,6 @@ class Point
 
     class <<self
 
-        # Provides out-of-instance storage for non-serializable bindings.
-        #
-        # @private
-        def bindings
-            @bindings ||= {}
-        end
-
-        # Increments the {Point#id} to be used for the next instance.
-        #
-        # @private
-        def increment_id
-            @id ||= 0
-            @id += 1
-        end
-
         # @param    [TracePoint]    tp
         #   Ruby TracePoint object.
         # @param    [Hash]  options
@@ -145,7 +97,6 @@ class Point
                 class_name:  defined_class,
                 method_name: tp.method_id,
                 event:       tp.event,
-                context:     tp.binding,
                 timestamp:   Time.now
             }.merge( options ))
         end

@@ -7,8 +7,6 @@ describe SCNR::Introspector::Trace::Point do
     end
 
     it 'supports Marshal serialization' do
-        expect( Marshal.load( Marshal.dump( subject ) ).id ).to eq subject.id
-
         data.each do |k, v|
             expect(subject.send(k)).to eq v
         end
@@ -19,36 +17,6 @@ describe SCNR::Introspector::Trace::Point do
             data.each do |k, v|
                 expect(subject.send(k)).to eq v
             end
-        end
-
-        it 'sets an incremental #id' do
-            id1 = new_point.id
-            id2 = new_point.id
-            id3 = new_point.id
-
-            expect(id3 - id2).to be 1
-            expect(id2 - id1).to be 1
-        end
-    end
-
-    describe '#stack_frame' do
-        context 'when there is a #context' do
-            it "returns an #{described_class::StackFrame}" do
-                expect(subject.stack_frame).to be_kind_of described_class::StackFrame
-            end
-        end
-
-        context 'when there is no #context' do
-            it 'returns nil' do
-                allow(subject).to receive(:context) { nil }
-                expect(subject.stack_frame).to be_nil
-            end
-        end
-    end
-
-    describe '#context' do
-        it 'returns the associated binding' do
-            expect(subject.context).to be_kind_of Binding
         end
     end
 
@@ -62,7 +30,6 @@ describe SCNR::Introspector::Trace::Point do
                 expect(point.class_name).to eq nil.class.name
                 expect(point.method_name).to eq tp.method_id
                 expect(point.event).to eq tp.event
-                expect(point.context).to be_kind_of Binding
                 expect(point.timestamp).to be_kind_of Time
             end.enable{}
 
@@ -77,7 +44,6 @@ describe SCNR::Introspector::Trace::Point do
                 expect(point.class_name).to eq tp.defined_class.name
                 expect(point.method_name).to eq tp.method_id
                 expect(point.event).to eq tp.event
-                expect(point.context).to be_kind_of Binding
                 expect(point.timestamp).to be_kind_of Time
             end
 

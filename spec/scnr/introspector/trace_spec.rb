@@ -144,27 +144,5 @@ describe SCNR::Introspector::Trace do
                 end
             end
         end
-
-        context "when #{described_class}#without_context?" do
-            context 'true' do
-                let(:options) do
-                    super().merge( with_context: true )
-                end
-
-                it "sets #{described_class::Point}#context" do
-                    expect(subject.points.first.context).to be_kind_of Binding
-                end
-            end
-
-            context 'false' do
-                let(:options) do
-                    super().merge( with_context: false )
-                end
-
-                it "does not set #{described_class::Point}#context" do
-                    expect(subject.points.first.context).to be_nil
-                end
-            end
-        end
     end
 end

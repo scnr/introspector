@@ -5,7 +5,6 @@ Factory.define :point_data do
         class_name:  'Stuff',
         method_name: :blah,
         event:       :call,
-        context:     binding,
         timestamp:   Time.now
     }
 end

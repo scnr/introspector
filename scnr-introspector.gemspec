@@ -19,9 +19,7 @@ Gem::Specification.new do |spec|
     spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
     spec.require_paths = ['lib']
 
-    spec.add_dependency 'scnr-ui-cli'
     spec.add_dependency 'binding_of_caller', '~> 1.0.0'
-    spec.add_dependency 'pry'
 
     spec.add_development_dependency 'bundler'
     spec.add_development_dependency 'rake',    '~> 10.0'
