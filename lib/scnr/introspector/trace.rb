@@ -30,7 +30,7 @@ class Trace
         elsif scope.is_a? Hash
             @scope = Trace::Scope.new( scope )
         elsif scope.nil?
-            @scope = Trace::Scope.new( Configuration.options[:scope] )
+            @scope = Trace::Scope.new
         else
             fail Trace::Scope::Error::Invalid
         end
