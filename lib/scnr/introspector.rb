@@ -1,8 +1,10 @@
 require 'rbconfig'
+require 'rack/utils'
 require 'pp'
 
 module SCNR
 class Introspector
+    include Rack::Utils
 
     require 'scnr/introspector/version'
     require 'scnr/introspector/error'
@@ -52,21 +54,38 @@ class Introspector
 
     def serve( env )
         body = nil
+
         case env['REQUEST_PATH']
         when '/scnr/introspector/trace'
-            body = self.class.trace_to_json
+            params = {}
+            if q = env['QUERY_STRING']
+                params = parse_query( q )
+            end
+
+            if params['id']
+                body = JSON.pretty_generate( self.class.trace[params['id']].to_rpc_data )
+            else
+                body = self.class.trace_to_json
+            end
+
+        when '/scnr/introspector/trace/clear'
+            self.class.trace.clear
 
         when '/scnr/introspector/coverage'
-            nil
 
         when '/scnr/introspector/platforms'
-            JSON.pretty_generate( [os] )
+            platforms = [:ruby, os, db]
+            if rails?
+                platforms << :rails
+            end
+
+            body = JSON.pretty_generate( platforms.compact )
 
         else
             return nil
         end
 
-        [200, { 'Content-Type' => 'application.json' }, [body]]
+        [200, { 'Content-Type' => 'application.json' }, [body.to_s]]
     end
 
     # @return   [Symbol]
@@ -95,6 +114,30 @@ class Introspector
         )
     end
 
+    def db
+        return if !rails?
+
+        case ActiveRecord::Base.connection.adapter_name
+        when 'PostgreSQL'
+            :pgsql
+
+        when 'MySQL'
+            :mysql
+
+        when 'SQLite3'
+            :sqlite
+
+        else
+            nil
+
+        end
+    end
+
+    def rails?
+        if defined? Rails
+            return @app.is_a? Rails::Application
+        end
+    end
 
 end
 end
