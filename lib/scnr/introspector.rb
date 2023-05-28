@@ -13,79 +13,74 @@ class Introspector
     require 'scnr/introspector/trace'
     require 'scnr/introspector/coverage'
 
-    Coverage.enable
-
-    class <<self
-        def trace
-            @trace ||= {}
-        end
-
-        def trace=( t )
-            @trace = t
-        end
-
-        def trace_to_json
-            JSON.pretty_generate trace.inject( {} ) { |h, (k, v)| h[k] = v.to_rpc_data; h }
-        end
-    end
+    # Coverage.enable
 
     def initialize( app, options = {} )
         @app     = app
         @options = options
+
+        @mutex = Mutex.new
+    end
+
+    def synchronize( &block )
+        @mutex.synchronize( &block )
     end
 
     def call( env )
-        if id = env['HTTP_SCNR_INTROSPECTOR_TRACE']
-            response = nil
-            self.class.trace[id] = Trace.new @options do
-                response = @app.call( env )
-            end
-            response
-        elsif r = serve( env )
-            r
-        else
-            @app.call( env )
+        info = Set.new
+        info << :platforms
+
+        if env['HTTP_X_SCNR_INTROSPECTOR_TRACE']
+            info << :trace
         end
 
-    rescue => e
-        pp e
-        pp e.backtrace
+        inject( env, info )
     end
 
-    def serve( env )
-        body = nil
+    def inject( env, info = [] )
+        data = {}
 
-        case env['REQUEST_PATH']
-        when '/scnr/introspector/trace'
-            params = {}
-            if q = env['QUERY_STRING']
-                params = parse_query( q )
+        response = nil
+        if info.include? :trace
+
+            trace = nil
+            synchronize do
+                trace = Trace.new @options do
+                    response = @app.call( env )
+                end
             end
 
-            if params['id']
-                body = JSON.pretty_generate( self.class.trace[params['id']].to_rpc_data )
-            else
-                body = self.class.trace_to_json
-            end
-
-        when '/scnr/introspector/trace/clear'
-            self.class.trace.clear
-
-        when '/scnr/introspector/coverage'
-
-        when '/scnr/introspector/platforms'
-            platforms = [:ruby, os, db]
-            if rails?
-                platforms << :rails
-            end
-
-            body = JSON.pretty_generate( platforms.compact )
-
+            data['trace'] = trace.to_rpc_data
         else
-            return nil
+            response = @app.call( env )
         end
 
-        [200, { 'Content-Type' => 'application.json' }, [body.to_s]]
+        if info.include? :platforms
+            data['platforms'] = self.platforms
+        end
+
+        if info.include?( :coverage ) && Coverage.enabled?
+            data['coverage'] = Coverage.new( @options ).retrieve_results
+        end
+
+        code    = response.shift
+        headers = response.shift
+        body    = response.shift
+
+        seed = env['HTTP_X_SCNR_ENGINE_SCAN_SEED']
+
+        body << "<!-- #{seed}\n#{JSON.dump( data )}\n -->"
+        headers['Content-Length'] = body.map(&:bytesize).inject(&:+)
+
+        [code, headers, body]
+    end
+
+    def platforms
+        platforms = [:ruby, os, db]
+        if rails?
+            platforms << :rails
+        end
+        platforms.compact
     end
 
     # @return   [Symbol]
