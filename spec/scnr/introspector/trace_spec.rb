@@ -123,10 +123,6 @@ describe SCNR::Introspector::Trace do
             expect(point_data).to eq expected_data
         end
 
-        it "assigns 'self' as #{described_class::Point}#trace" do
-            expect(subject.points.map(&:trace).uniq).to eq [subject]
-        end
-
         it 'returns self' do
             expect(subject.trace{}).to be subject
         end

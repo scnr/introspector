@@ -6,10 +6,6 @@ class Trace
 # Points to a code execution {#event}.
 class Point
 
-    # @return   [Trace]
-    #   Parent coverage.
-    attr_accessor :trace
-
     # @return   [String,nil]
     #   Path to the source file, `nil` if no file is available (i.e. compiled code).
     attr_accessor :path
@@ -48,19 +44,10 @@ class Point
     end
 
     def marshal_dump
-        trace_point  = @trace_point
-        @trace_point = nil
-
-        trace  = @trace
-        @trace = nil
-
         instance_variables.inject( {} ) do |h, iv|
             h[iv.to_s.gsub('@','')] = instance_variable_get( iv )
             h
         end
-    ensure
-        @trace_point = trace_point
-        @trace       = trace
     end
 
     def marshal_load( h )

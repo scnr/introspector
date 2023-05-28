@@ -101,9 +101,7 @@ class Trace
     private
 
     def create_point_from_trace_point( tp )
-        options = {
-            trace: self
-        }
+        options = {}
 
         if !with_context?
             options[:context] = nil
