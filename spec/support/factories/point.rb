@@ -11,5 +11,5 @@ Factory.define :point_data do
 end
 
 Factory.define :point do
-    SCNR::Engine::HTTP::Request::Trace::Point.new(Factory[:point_data] )
+    SCNR::Introspector::Trace::Point.new(Factory[:point_data] )
 end

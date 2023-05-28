@@ -1,4 +1,4 @@
-describe SCNR::Introspector::Scan::Coverage::Resource::Line do
+describe SCNR::Introspector::Coverage::Resource::Line do
     subject { described_class.new options }
 
     let(:options) do

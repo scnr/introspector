@@ -1,5 +1,5 @@
-describe SCNR::Introspector::Scan::Coverage::Resource do
-    subject { SCNR::Introspector::Scan::Coverage::Resource.new path }
+describe SCNR::Introspector::Coverage::Resource do
+    subject { SCNR::Introspector::Coverage::Resource.new path }
     let(:path) { helper_path_for('target.rb') }
 
     describe '#initialize' do

@@ -1,3 +1,3 @@
 Factory.define :stack_frame do
-    SCNR::Engine::HTTP::Client::Coverage::Point::StackFrame.new(Factory[:point] )
+    SCNR::Introspector::Trace::Point::StackFrame.new(Factory[:point] )
 end

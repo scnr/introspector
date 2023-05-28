@@ -1,4 +1,4 @@
-describe SCNR::Engine::HTTP::Request::Trace::Point::StackFrame do
+describe SCNR::Introspector::Trace::Point::StackFrame do
     subject { described_class.new point }
     let(:point) { Factory[:point] }
 

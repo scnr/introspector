@@ -23,6 +23,9 @@ class Coverage
         end
     end
 
+    class Scope < Introspector::Scope
+    end
+
     # @return   [Scope]
     attr_accessor :scope
 

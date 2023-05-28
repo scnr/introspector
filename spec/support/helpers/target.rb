@@ -19,7 +19,7 @@ end
 
 def get_point( events = [], &block )
     get_trace_point *events do |tp|
-        block.call SCNR::Engine::HTTP::Request::Trace::Point.from_trace_point(tp )
+        block.call SCNR::Introspector::Trace::Point.from_trace_point(tp )
     end
 end
 

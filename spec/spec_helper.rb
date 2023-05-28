@@ -1,6 +1,7 @@
 require 'simplecov'
 require 'faker'
 require 'scnr/introspector'
+require 'scnr/engine'
 
 # Enable extra output options in order to get full coverage...
 # SCNR::UI::CLI::Output.verbose_on
