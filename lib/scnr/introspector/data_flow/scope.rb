@@ -1,6 +1,6 @@
 module SCNR
 class Introspector
-class Trace
+class DataFlow
 
 class Scope < Introspector::Scope
 end

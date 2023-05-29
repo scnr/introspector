@@ -10,7 +10,8 @@ class Introspector
     require 'scnr/introspector/error'
     require 'scnr/introspector/configuration'
     require 'scnr/introspector/scope'
-    require 'scnr/introspector/trace'
+    require 'scnr/introspector/execution_flow'
+    require 'scnr/introspector/data_flow'
     require 'scnr/introspector/coverage'
 
     # Coverage.enable
@@ -74,8 +75,8 @@ EORUBY
             @taint
         end
 
-        def sinks
-            @sinks ||= {}
+        def data_flows
+            @data_flows ||= {}
         end
 
         def synchronize( &block )
@@ -84,10 +85,7 @@ EORUBY
 
         def log_sinks( taint, sink )
             synchronize do
-                (self.sinks[taint] ||= []) << {
-                  sink:   sink,
-                  caller: filter_caller( Kernel.caller )
-                }
+                (self.data_flows[taint] ||= DataFlow.new).sinks << sink
             end
         end
 
@@ -105,14 +103,15 @@ EORUBY
             tainted = find_taint_in_arguments( taint, args )
             return if !tainted
 
-            log_sinks(
-              taint,
-              object: object.to_s,
-              method: method.to_s,
-              args:   JSON.dump( args.map(&:to_s) ),
+            sink = DataFlow::Sink.new(
+              object:       object.to_s,
+              method_name:  method.to_s,
+              arguments:    args,
               tainted_argument_index: tainted[0],
               tainted_value:          tainted[1].to_s,
-              )
+              backtrace:    filter_caller( Kernel.caller )
+            )
+            log_sinks( taint, sink )
         end
 
         def find_taint_in_arguments( taint, args )
@@ -176,8 +175,8 @@ EORUBY
         info << :platforms
 
         if env['HTTP_X_SCNR_INTROSPECTOR_TRACE']
-            info << :sinks
-            info << :trace
+            info << :data_flow
+            info << :execution_flow
         end
 
         inject( env, info )
@@ -193,16 +192,16 @@ EORUBY
         data = {}
 
         response = nil
-        if info.include? :trace
+        if info.include? :execution_flow
 
-            trace = nil
+            execution_flow = nil
             synchronize do
-                trace = Trace.new @options do
+                execution_flow = ExecutionFlow.new @options do
                     response = @app.call( env )
                 end
             end
 
-            data['trace'] = trace.to_rpc_data
+            data['execution_flow'] = execution_flow.to_rpc_data
         else
             response = @app.call( env )
         end
@@ -215,8 +214,8 @@ EORUBY
             data['coverage'] = Coverage.new( @options ).retrieve_results
         end
 
-        if info.include? :sinks
-            data['sinks'] = self.class.sinks.delete( self.class.taint_seed )
+        if info.include? :data_flow
+            data['data_flow'] = self.class.data_flows.delete( self.class.taint_seed ).to_rpc_data
         end
 
         code    = response.shift

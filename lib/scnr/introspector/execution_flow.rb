@@ -1,10 +1,10 @@
-require 'scnr/introspector/trace/scope'
-require 'scnr/introspector/trace/point'
+require 'scnr/introspector/execution_flow/scope'
+require 'scnr/introspector/execution_flow/point'
 
 module SCNR
 class Introspector
 
-class Trace
+class ExecutionFlow
 
     # @return   [Scope]
     attr_accessor :scope
@@ -25,14 +25,14 @@ class Trace
     def initialize( options = {}, &block )
         options = options.dup
 
-        if (scope = options.delete(:scope)).is_a? Trace::Scope
+        if (scope = options.delete(:scope)).is_a? ExecutionFlow::Scope
             @scope = scope
         elsif scope.is_a? Hash
-            @scope = Trace::Scope.new( scope )
+            @scope = ExecutionFlow::Scope.new( scope )
         elsif scope.nil?
-            @scope = Trace::Scope.new
+            @scope = ExecutionFlow::Scope.new
         else
-            fail Trace::Scope::Error::Invalid
+            fail ExecutionFlow::Scope::Error::Invalid
         end
 
         @points = []
@@ -40,16 +40,12 @@ class Trace
         trace( &block ) if block_given?
     end
 
-    def with_context?
-        !!@with_context
-    end
-
     # Traces code execution events as {Point points} and populates {#points}.
     #
     # @param    [Block] block
     #   Code to trace.
     #
-    # @return   [Trace]
+    # @return   [ExecutionFlow]
     #   `self`
     def trace( &block )
         TracePoint.new do |tp|

@@ -1,6 +1,6 @@
 module SCNR
 class Introspector
-class Trace
+class ExecutionFlow
 
 # Trace point, similar in function to a native Ruby TracePoint.
 # Points to a code execution {#event}.
@@ -26,10 +26,6 @@ class Point
     #   Event name.
     attr_accessor :event
 
-    # @return   [Time]
-    #   Time of logging.
-    attr_accessor :timestamp
-
     # @param    [Hash]  options
     def initialize( options = {} )
         options.each do |k, v|
@@ -50,22 +46,17 @@ class Point
         end
     end
 
-    def to_msgpack
-        marshal_dump
-    end
-
     def marshal_load( h )
         h.each { |k, v| instance_variable_set( "@#{k}", v ) }
     end
 
     def to_rpc_data
-        marshal_dump.merge( 'timestamp' => timestamp.to_s )
+        marshal_dump
     end
 
     def self.from_rpc_data( data )
         n = self.new
         n.marshal_load( data )
-        n.timestamp = Time.new( n.timestamp )
         n
     end
 
@@ -85,8 +76,7 @@ class Point
                 line_number: tp.lineno,
                 class_name:  defined_class,
                 method_name: tp.method_id,
-                event:       tp.event,
-                timestamp:   Time.now
+                event:       tp.event
             })
         end
     end

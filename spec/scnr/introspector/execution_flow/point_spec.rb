@@ -1,4 +1,4 @@
-describe SCNR::Introspector::Trace::Point do
+describe SCNR::Introspector::ExecutionFlow::Point do
     subject { described_class.new( data ) }
     let(:data) { Factory[:point_data] }
 
