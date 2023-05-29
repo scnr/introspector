@@ -14,6 +14,7 @@ Gem::Specification.new do |spec|
     spec.homepage    = 'http://ecsypno.com'
     spec.license     = 'Commercial'
 
+    spec.files       = Dir.glob( 'bin/.gitkeep' )
     spec.files       = Dir.glob( 'lib/**/*' )
 
     spec.add_dependency 'binding_of_caller', '~> 1.0.0'
