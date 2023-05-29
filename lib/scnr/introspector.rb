@@ -15,11 +15,156 @@ class Introspector
 
     # Coverage.enable
 
+    OVERLOAD = [
+      [:erb, :Templates],
+      [:test, [:SCNR, :Introspector, :Test]]
+    ]
+
+    module Overloads
+    end
+
+    OVERLOAD.each do |m, object|
+        if object.is_a? Array
+            name      = object.pop
+            namespace = Object
+
+            n = false
+            object.each do |o|
+                begin
+                    namespace = namespace.const_get( o )
+                rescue
+                    n = true
+                    break
+                end
+            end
+            next if n
+
+            object = namespace.const_get( name ) rescue next
+        else
+            object = Object.const_get( object ) rescue next
+        end
+
+        overload( object, m )
+    end
+
+    @mutex  = Mutex.new
+    class <<self
+        def overload( object, m )
+            ov = <<EORUBY
+        module Overloads
+        module #{object.to_s.split( '::' ).join}Overload
+            def #{m}( *args )
+                SCNR::Introspector.find_and_log_taint( #{object}, :#{m}, args )   
+                super *args
+            end
+        end
+        end
+
+        #{object}.prepend Overloads::#{object.to_s.split( '::' ).join}Overload
+EORUBY
+            eval ov
+            eval ov
+        end
+
+        def taint_seed=( t )
+            @taint = t
+        end
+
+        def taint_seed
+            @taint
+        end
+
+        def sinks
+            @sinks ||= {}
+        end
+
+        def synchronize( &block )
+            @mutex.synchronize( &block )
+        end
+
+        def log_sinks( taint, sink )
+            synchronize do
+                (self.sinks[taint] ||= []) << {
+                  sink:   sink,
+                  caller: filter_caller( Kernel.caller )
+                }
+            end
+        end
+
+        def filter_caller( a )
+            dir = File.dirname( __FILE__ )
+            a.reject do |c|
+                c.start_with?( dir ) || c.include?( 'trace_point' )
+            end
+        end
+
+        def find_and_log_taint( object, method, args )
+            taint = @taint
+            return if !taint
+
+            tainted = find_taint_in_arguments( taint, args )
+            return if !tainted
+
+            log_sinks(
+              taint,
+              object: object.to_s,
+              method: method.to_s,
+              args:   args.to_s,
+              tainted_argument_index: tainted[0],
+              tainted_value:          tainted[1].to_s,
+              )
+        end
+
+        def find_taint_in_arguments( taint, args )
+            args.each.with_index do |arg, i|
+                value = find_taint_recursively( taint, arg, i )
+                next if !value
+
+                return [i, value]
+            end
+
+            nil
+        end
+
+        def find_taint_recursively( taint, object, depth )
+            case object
+            when Hash
+                object.each do |k, v|
+                    t = find_taint_recursively( taint, v, depth )
+                    return t if t
+                end
+
+            when Array
+                object.each do |v|
+                    t = find_taint_recursively( taint, v, depth )
+                    return t if t
+                end
+
+            when String
+                return object if object.include? taint
+
+            else
+                nil
+            end
+
+            nil
+        end
+    end
+
     def initialize( app, options = {} )
         @app     = app
         @options = options
 
+        overload_application
+
         @mutex = Mutex.new
+    end
+
+    def overload_application
+        @app.methods.each do |m|
+            next if @app.method( m ).parameters.empty?
+            self.class.overload( @app.class, m )
+        end
     end
 
     def synchronize( &block )
@@ -31,13 +176,20 @@ class Introspector
         info << :platforms
 
         if env['HTTP_X_SCNR_INTROSPECTOR_TRACE']
+            info << :sinks
             info << :trace
         end
 
         inject( env, info )
+
+    rescue => e
+        pp e
+        pp e.backtrace
     end
 
     def inject( env, info = [] )
+        self.class.taint_seed = env['HTTP_X_SCNR_INTROSPECTOR_TAINT']
+
         data = {}
 
         response = nil
@@ -63,16 +215,19 @@ class Introspector
             data['coverage'] = Coverage.new( @options ).retrieve_results
         end
 
+        if info.include? :sinks
+            data['sinks'] = self.class.sinks.delete( self.class.taint_seed )
+        end
+
         code    = response.shift
         headers = response.shift
         body    = response.shift
 
         seed = env['HTTP_X_SCNR_ENGINE_SCAN_SEED']
-
-        body << "<!-- #{seed}\n#{JSON.dump( data )}\n -->"
+        body << "<!-- #{seed}\n#{JSON.dump( data )}\n#{seed} -->"
         headers['Content-Length'] = body.map(&:bytesize).inject(&:+)
 
-        [code, headers, body]
+        [code, headers, body ]
     end
 
     def platforms
