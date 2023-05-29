@@ -17,8 +17,6 @@ Gem::Specification.new do |spec|
     spec.files       = Dir.glob( 'bin/.gitkeep' )
     spec.files       = Dir.glob( 'lib/**/*' )
 
-    spec.add_dependency 'binding_of_caller', '~> 1.0.0'
-
     spec.add_development_dependency 'bundler'
     spec.add_development_dependency 'rake',    '~> 10.0'
     spec.add_development_dependency 'puma'
