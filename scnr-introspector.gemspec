@@ -15,7 +15,7 @@ Gem::Specification.new do |spec|
     spec.license     = 'Commercial'
 
     spec.files       = Dir.glob( 'bin/.gitkeep' )
-    spec.files       = Dir.glob( 'lib/**/*' )
+    spec.files      += Dir.glob( 'lib/**/*' )
 
     spec.add_development_dependency 'bundler'
     spec.add_development_dependency 'rake',    '~> 10.0'
