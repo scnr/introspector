@@ -4,8 +4,7 @@ Factory.define :point_data do
         line_number: 19,
         class_name:  'Stuff',
         method_name: :blah,
-        event:       :call,
-        timestamp:   Time.now
+        event:       :call
     }
 end
 

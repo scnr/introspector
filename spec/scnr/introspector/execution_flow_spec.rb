@@ -5,7 +5,7 @@ def points_to_data( points )
     end
 end
 
-describe SCNR::Introspector::Trace do
+describe SCNR::Introspector::ExecutionFlow do
     subject { described_class.new options }
 
     let(:options) {

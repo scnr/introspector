@@ -30,7 +30,6 @@ describe SCNR::Introspector::ExecutionFlow::Point do
                 expect(point.class_name).to eq nil.class.name
                 expect(point.method_name).to eq tp.method_id
                 expect(point.event).to eq tp.event
-                expect(point.timestamp).to be_kind_of Time
             end.enable{}
 
             checked = false
@@ -44,7 +43,6 @@ describe SCNR::Introspector::ExecutionFlow::Point do
                 expect(point.class_name).to eq tp.defined_class.name
                 expect(point.method_name).to eq tp.method_id
                 expect(point.event).to eq tp.event
-                expect(point.timestamp).to be_kind_of Time
             end
 
             expect(checked).to be_truthy
