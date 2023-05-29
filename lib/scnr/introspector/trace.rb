@@ -35,8 +35,7 @@ class Trace
             fail Trace::Scope::Error::Invalid
         end
 
-        @with_context = options[:with_context]
-        @points       = []
+        @points = []
 
         trace( &block ) if block_given?
     end
@@ -88,7 +87,7 @@ class Trace
         h.each do |k, v|
             case k
                 when 'points'
-                    n.instance_variable_set( "@#{k}", v.map { |pd| Point.from_rpc_data( pd ).tap { |p| p.trace = n } } )
+                    n.instance_variable_set( "@#{k}", v.map { |pd| Point.from_rpc_data( pd ) } )
 
                 else
                     n.instance_variable_set( "@#{k}", v )
@@ -101,13 +100,7 @@ class Trace
     private
 
     def create_point_from_trace_point( tp )
-        options = {}
-
-        if !with_context?
-            options[:context] = nil
-        end
-
-        Point.from_trace_point( tp, options )
+        Point.from_trace_point( tp  )
     end
 
 end

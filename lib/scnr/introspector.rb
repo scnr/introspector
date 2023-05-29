@@ -109,7 +109,7 @@ EORUBY
               taint,
               object: object.to_s,
               method: method.to_s,
-              args:   args.to_s,
+              args:   JSON.dump( args.map(&:to_s) ),
               tainted_argument_index: tainted[0],
               tainted_value:          tainted[1].to_s,
               )
