@@ -174,7 +174,7 @@ EORUBY
         info = Set.new
         info << :platforms
 
-        if env['HTTP_X_SCNR_INTROSPECTOR_TRACE']
+        if env.delete( 'HTTP_X_SCNR_INTROSPECTOR_TRACE' )
             info << :data_flow
             info << :execution_flow
         end
@@ -187,7 +187,8 @@ EORUBY
     end
 
     def inject( env, info = [] )
-        self.class.taint_seed = env['HTTP_X_SCNR_INTROSPECTOR_TAINT']
+        self.class.taint_seed = env.delete( 'HTTP_X_SCNR_INTROSPECTOR_TAINT' )
+        seed                  = env.delete( 'HTTP_X_SCNR_ENGINE_SCAN_SEED' )
 
         data = {}
 
@@ -214,15 +215,14 @@ EORUBY
             data['coverage'] = Coverage.new( @options ).retrieve_results
         end
 
-        if info.include? :data_flow
-            data['data_flow'] = self.class.data_flows.delete( self.class.taint_seed ).to_rpc_data
+        if info.include?( :data_flow ) && self.class.taint_seed
+            data['data_flow'] = self.class.data_flows.delete( self.class.taint_seed )&.to_rpc_data
         end
 
         code    = response.shift
         headers = response.shift
         body    = response.shift
 
-        seed = env['HTTP_X_SCNR_ENGINE_SCAN_SEED']
         body << "<!-- #{seed}\n#{JSON.dump( data )}\n#{seed} -->"
         headers['Content-Length'] = body.map(&:bytesize).inject(&:+)
 
