@@ -33,7 +33,7 @@ class Sink
     end
 
     def to_rpc_data
-        marshal_dump.merge 'arguments' => arguments.map(&:to_s)
+        marshal_dump.merge 'arguments' => arguments.map(&:to_json)
     end
 
     def marshal_load( h )
@@ -43,6 +43,7 @@ class Sink
     def self.from_rpc_data( data )
         n = self.new
         n.marshal_load( data )
+        n.arguments = n.arguments.map { |a| ::JSON.load a }
         n
     end
 
