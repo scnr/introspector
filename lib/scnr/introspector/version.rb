@@ -1,5 +1,5 @@
 module SCNR
 class Introspector
-    VERSION = '1.0dev'
+    VERSION = IO.read( File.dirname( __FILE__ ) + '/version' ).strip
 end
 end
