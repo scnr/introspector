@@ -1,3 +1,5 @@
+require 'thread'
+
 module SCNR
 class Introspector
 class ExecutionFlow
@@ -25,6 +27,8 @@ class Point
     # @return   [Symbol]
     #   Event name.
     attr_accessor :event
+
+    attr_accessor :source
 
     # @param    [Hash]  options
     def initialize( options = {} )
@@ -76,10 +80,26 @@ class Point
                 line_number: tp.lineno,
                 class_name:  defined_class,
                 method_name: tp.method_id,
-                event:       tp.event
+                event:       tp.event,
+                source:      source_line( tp.path, tp.lineno )
             })
         end
+
+        def source_line_mutex( &block )
+            (@mutex ||= Mutex.new).synchronize( &block )
+        end
+
+        def source_line( path, line )
+            return if !path || !line
+
+            source_line_mutex do
+                @@lines ||= {}
+                @@lines[path] ||= IO.readlines( path )
+                @@lines[path][line]
+            end
+        end
     end
+    source_line_mutex {}
 
 end
 
