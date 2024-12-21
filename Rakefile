@@ -15,4 +15,3 @@ task :docs do
 
     sh "rm -rf .yardoc"
 end
-

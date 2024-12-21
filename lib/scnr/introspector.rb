@@ -8,7 +8,6 @@ class Introspector
 
     require 'scnr/introspector/version'
     require 'scnr/introspector/error'
-    require 'scnr/introspector/configuration'
     require 'scnr/introspector/scope'
     require 'scnr/introspector/execution_flow'
     require 'scnr/introspector/data_flow'
