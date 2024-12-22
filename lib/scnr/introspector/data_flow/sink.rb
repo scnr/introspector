@@ -1,3 +1,5 @@
+require_relative '../utilities/my_method_source/code_helpers'
+
 module SCNR
 class Introspector
 class DataFlow
@@ -7,6 +9,9 @@ class Sink
     attr_accessor :object
 
     attr_accessor :method_name
+    attr_accessor :method_source
+
+    attr_accessor :source_location
 
     attr_accessor :arguments
 
@@ -22,6 +27,14 @@ class Sink
             next if v.nil?
 
             send( "#{k}=", v )
+        end
+
+        return if @method_source || !@source_location
+        begin
+            @method_source = MyMethodSource::CodeHelpers.expression_at(
+              File.open( @source_location.first ), @source_location.last
+            )
+        rescue SyntaxError
         end
     end
 

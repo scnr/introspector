@@ -50,11 +50,13 @@ class Introspector
     @mutex  = Mutex.new
     class <<self
         def overload( object, m )
+            source_location = object.allocate.method(m).source_location
+
             ov = <<EORUBY
         module Overloads
         module #{object.to_s.split( '::' ).join}Overload
             def #{m}( *args )
-                SCNR::Introspector.find_and_log_taint( #{object}, :#{m}, args )   
+                SCNR::Introspector.find_and_log_taint( #{object}, :#{m}, #{source_location.inspect}, args )
                 super *args
             end
         end
@@ -62,7 +64,6 @@ class Introspector
 
         #{object}.prepend Overloads::#{object.to_s.split( '::' ).join}Overload
 EORUBY
-            eval ov
             eval ov
         end
 
@@ -95,7 +96,7 @@ EORUBY
             end
         end
 
-        def find_and_log_taint( object, method, args )
+        def find_and_log_taint( object, method, source_location, args )
             taint = @taint
             return if !taint
 
@@ -108,7 +109,8 @@ EORUBY
               arguments:    args,
               tainted_argument_index: tainted[0],
               tainted_value:          tainted[1].to_s,
-              backtrace:    filter_caller( Kernel.caller )
+              backtrace:    filter_caller( Kernel.caller[1..-1] ),
+              source_location: source_location
             )
             log_sinks( taint, sink )
         end
