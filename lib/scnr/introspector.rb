@@ -1,4 +1,5 @@
 require 'rbconfig'
+require 'securerandom'
 require 'rack/utils'
 require 'pp'
 
@@ -27,10 +28,11 @@ class Introspector
     class <<self
         def overload( object, m )
             method_source_location = object.allocate.method(m).source_location
+            rnd = SecureRandom.hex(10)
 
             ov = <<EORUBY
         module Overloads
-        module #{object.to_s.split( '::' ).join}Overload
+        module #{object.to_s.split( '::' ).join}#{rnd}Overload
             def #{m}( *args )
                 SCNR::Introspector.find_and_log_taint( #{object}, :#{m}, #{method_source_location.inspect}, args )
                 super *args
@@ -38,7 +40,7 @@ class Introspector
         end
         end
 
-        #{object}.prepend Overloads::#{object.to_s.split( '::' ).join}Overload
+        #{object}.prepend Overloads::#{object.to_s.split( '::' ).join}#{rnd}Overload
 EORUBY
             eval ov
         rescue => e
