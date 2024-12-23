@@ -23,30 +23,6 @@ class Introspector
     module Overloads
     end
 
-    OVERLOAD.each do |m, object|
-        if object.is_a? Array
-            name      = object.pop
-            namespace = Object
-
-            n = false
-            object.each do |o|
-                begin
-                    namespace = namespace.const_get( o )
-                rescue
-                    n = true
-                    break
-                end
-            end
-            next if n
-
-            object = namespace.const_get( name ) rescue next
-        else
-            object = Object.const_get( object ) rescue next
-        end
-
-        overload( object, m )
-    end
-
     @mutex  = Mutex.new
     class <<self
         def overload( object, m )
@@ -65,6 +41,10 @@ class Introspector
         #{object}.prepend Overloads::#{object.to_s.split( '::' ).join}Overload
 EORUBY
             eval ov
+        rescue => e
+            # puts ov
+            # pp e
+            # pp e.backtrace
         end
 
         def taint_seed=( t )
@@ -151,19 +131,65 @@ EORUBY
         end
     end
 
+    OVERLOAD.each do |m, object|
+        if object.is_a? Array
+            name      = object.pop
+            namespace = Object
+
+            n = false
+            object.each do |o|
+                begin
+                    namespace = namespace.const_get( o )
+                rescue
+                    n = true
+                    break
+                end
+            end
+            next if n
+
+            object = namespace.const_get( name ) rescue next
+        else
+            object = Object.const_get( object ) rescue next
+        end
+
+        overload( object, m )
+    end
+
     def initialize( app, options = {} )
         @app     = app
         @options = options
 
         overload_application
+        overload_rails if rails?
 
         @mutex = Mutex.new
     end
 
     def overload_application
-        @app.methods.each do |m|
-            next if @app.method( m ).parameters.empty?
-            self.class.overload( @app.class, m )
+        overload_class @app.class
+    end
+
+    def overload_rails
+        Rails.application.eager_load!
+
+        klasses = [
+          ActionController::Base,
+          ActiveRecord::Base
+        ]
+        descendants = klasses.map do |k|
+            ObjectSpace.each_object( Class ).select { |klass| klass < k }
+        end.flatten.reject { |k| k.to_s.start_with? '#' }
+
+        descendants.each do |klass|
+            overload_class klass
+        end
+    end
+
+    def overload_class( klass )
+        k = klass.allocate
+        k.methods.each do |m|
+            next if k.method( m ).parameters.empty?
+            self.class.overload( klass, m )
         end
     end
 
@@ -223,11 +249,14 @@ EORUBY
         code    = response.shift
         headers = response.shift
         body    = response.shift
+        body    = body.respond_to?( :body ) ? body.body : body
 
+        body = [body].flatten
         body << "<!-- #{seed}\n#{JSON.dump( data )}\n#{seed} -->"
-        headers['Content-Length'] = body.map(&:bytesize).inject(&:+)
 
-        [code, headers, body ]
+        headers['Content-Length'] = body.map(&:bytesize).inject(:+)
+
+        [code, headers, [body].flatten ]
     end
 
     def platforms
@@ -284,9 +313,7 @@ EORUBY
     end
 
     def rails?
-        if defined? Rails
-            return @app.is_a? Rails::Application
-        end
+        !!defined?( Rails )
     end
 
 end
