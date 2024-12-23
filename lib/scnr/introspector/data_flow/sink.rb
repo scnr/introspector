@@ -10,8 +10,9 @@ class Sink
 
     attr_accessor :method_name
     attr_accessor :method_source
+    attr_accessor :method_source_location
 
-    attr_accessor :source_location
+    attr_accessor :source
 
     attr_accessor :arguments
 
@@ -29,12 +30,20 @@ class Sink
             send( "#{k}=", v )
         end
 
-        return if @method_source || !@source_location
-        begin
-            @method_source = MyMethodSource::CodeHelpers.expression_at(
-              File.open( @source_location.first ), @source_location.last
-            )
-        rescue SyntaxError
+        if !@method_source && @method_source_location
+            begin
+                @method_source = MyMethodSource::CodeHelpers.expression_at(
+                  File.open( @method_source_location.first ), @method_source_location.last
+                )
+            rescue SyntaxError
+            end
+        end
+
+        if !@source && @backtrace
+            source_location = @backtrace.first.split( ':' ).first
+            if File.exists? source_location
+                @source = IO.read( source_location )
+            end
         end
     end
 
