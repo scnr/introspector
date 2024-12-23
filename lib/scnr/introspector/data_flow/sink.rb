@@ -31,11 +31,16 @@ class Sink
         end
 
         if !@method_source && @method_source_location
-            begin
-                @method_source = MyMethodSource::CodeHelpers.expression_at(
-                  File.open( @method_source_location.first ), @method_source_location.last
-                )
-            rescue SyntaxError
+            filepath = @method_source_location.first
+            lineno   = @method_source_location.last
+
+            if File.exists? filepath
+                File.open filepath do |f|
+                    begin
+                        @method_source = MyMethodSource::CodeHelpers.expression_at( File.open( f ), lineno )
+                    rescue SyntaxError
+                    end
+                end
             end
         end
 
