@@ -21,7 +21,7 @@ class MyApp < Sinatra::Base
         local_variable = 1
 
         <<EOHTML
-#{process_params( params )}
+        #{process_params( params )}
         <a href="?v=stuff">XSS</a>
 EOHTML
     end
