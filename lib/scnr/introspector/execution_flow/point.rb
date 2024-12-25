@@ -95,7 +95,7 @@ class Point
             source_line_mutex do
                 @@lines ||= {}
                 @@lines[path] ||= IO.readlines( path )
-                @@lines[path][line]
+                @@lines[path][line-1]
             end
         end
     end
