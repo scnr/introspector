@@ -6,6 +6,8 @@ class Introspector
 
 class ExecutionFlow
 
+    ALLOWED_EVENTS = Set.new([:line, :call, :c_call])
+
     # @return   [Scope]
     attr_accessor :scope
 
@@ -49,6 +51,7 @@ class ExecutionFlow
     #   `self`
     def trace( &block )
         TracePoint.new do |tp|
+            next if !ALLOWED_EVENTS.include? tp.event
             next if @scope.out?( tp.path )
 
             @points << create_point_from_trace_point( tp )
