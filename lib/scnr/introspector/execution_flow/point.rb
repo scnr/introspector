@@ -29,6 +29,7 @@ class Point
     attr_accessor :event
 
     attr_accessor :source
+    attr_accessor :file_contents
 
     # @param    [Hash]  options
     def initialize( options = {} )
@@ -81,7 +82,8 @@ class Point
                 class_name:  defined_class,
                 method_name: tp.method_id,
                 event:       tp.event,
-                source:      source_line( tp.path, tp.lineno )
+                source:      source_line( tp.path, tp.lineno ),
+                file_contents: IO.read( tp.path )
             })
         end
 
