@@ -1,6 +1,7 @@
 require 'rbconfig'
 require 'securerandom'
 require 'rack/utils'
+require 'base64'
 require 'pp'
 
 module SCNR
@@ -217,7 +218,12 @@ EORUBY
 
     def inject( env, info = [] )
         self.class.taint_seed = env.delete( 'HTTP_X_SCNR_INTROSPECTOR_TAINT' )
-        seed                  = env.delete( 'HTTP_X_SCNR_ENGINE_SCAN_SEED' )
+        if self.class.taint_seed
+            self.class.taint_seed = Base64.decode64( self.class.taint_seed )
+            self.class.taint_seed = nil if self.class.taint_seed.empty?
+        end
+
+        seed = env.delete( 'HTTP_X_SCNR_ENGINE_SCAN_SEED' )
 
         data = {}
 
@@ -261,6 +267,9 @@ EORUBY
         end
 
         [code, headers, [body].flatten ]
+    rescue => e
+        pp e
+        pp e.backtrace
     end
 
     def platforms
