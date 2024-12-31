@@ -251,12 +251,14 @@ EORUBY
         code    = response.shift
         headers = response.shift
         body    = response.shift
-        body    = body.respond_to?( :body ) ? body.body : body
 
-        body = [body].flatten
-        body << "<!-- #{seed}\n#{JSON.dump( data )}\n#{seed} -->"
+        if headers['Content-Type'] && headers['Content-Type'].include?( 'html' )
+            body = body.respond_to?( :body ) ? body.body : body
+            body = [body].flatten
+            body << "<!-- #{seed}\n#{JSON.dump( data )}\n#{seed} -->"
 
-        headers['Content-Length'] = body.map(&:bytesize).inject(:+)
+            headers['Content-Length'] = body.map(&:bytesize).inject(:+)
+        end
 
         [code, headers, [body].flatten ]
     end
