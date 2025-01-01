@@ -51,15 +51,15 @@ EORUBY
         end
 
         def taint_seed=( t )
-            @taint = t
+            Thread.current[:taint] = t
         end
 
         def taint_seed
-            @taint
+            Thread.current[:taint]
         end
 
         def data_flows
-            @data_flows ||= {}
+            Thread.current[:data_flows] ||= {}
         end
 
         def synchronize( &block )
@@ -72,6 +72,12 @@ EORUBY
             end
         end
 
+        def flush_sinks( taint )
+            synchronize do
+                self.data_flows.delete taint
+            end
+        end
+
         def filter_caller( a )
             dir = File.dirname( __FILE__ )
             a.reject do |c|
@@ -80,7 +86,7 @@ EORUBY
         end
 
         def find_and_log_taint( object, method, method_source_location, args )
-            taint = @taint
+            taint = self.taint_seed
             return if !taint
 
             tainted = find_taint_in_arguments( taint, args )
@@ -205,8 +211,11 @@ EORUBY
         info << :platforms
 
         if env.delete( 'HTTP_X_SCNR_INTROSPECTOR_TRACE' )
-            info << :data_flow
             info << :execution_flow
+        end
+
+        if env['HTTP_X_SCNR_INTROSPECTOR_TAINT']
+            info << :data_flow
         end
 
         inject( env, info )
@@ -251,7 +260,7 @@ EORUBY
         end
 
         if info.include?( :data_flow ) && self.class.taint_seed
-            data['data_flow'] = self.class.data_flows.delete( self.class.taint_seed )&.to_rpc_data
+            data['data_flow'] = self.class.flush_sinks( self.class.taint_seed )&.to_rpc_data
         end
 
         code    = response.shift
