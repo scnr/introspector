@@ -1,96 +1,101 @@
 # SCNR::Introspector
 
-The SCNR::Introspector provides an Interactive Application Security Testing (IAST)
-solution for Rack-based web applications like Ruby-on-Rails, Sinatra, Merb, etc.
+## Install
 
-## Features
+```bash
+gem install scnr-introspector
+```
 
-* Offline testing.
-    * No need for a live application supported by an HTTP server.
-* Incredible performance for quick scans.
-    * Direct communication with the running application.
-    * No HTTP, I/O, network overhead.
-* Absolutely reliable communication with the application.
-    * No need to worry about network conditions, available bandwidth, server
-        stress or timed-out requests.
-* IAST/Hybrid analysis, offering:
-    * Benefits of dynamic analysis:
-        * Issues are proven to exist based on the results of code execution.
-        * Coverage of dynamic input vectors and workflows.
-            * Even when using metaprogramming techniques.
-        * Testing of all the usual input vectors:
-            * GET and POST parameters.
-            * Cookies
-            * Headers
-            * URL Paths
-            * JSON request data
-            * XML request data
-            * Many more...
-        * Real browser analysis, for:
-            * Detection of client-side issues.
-            * Coverage of applications which rely on HTML5/DOM/JavaScript/AJAX.
-        * Detection of issues involving 3rd party entities, like:
-            * Operating System command injection
-            * SQL injection
-            * LDAP injection
-            * Unvalidated redirections
-            * Lots and lots more...
-    * Benefits of static analysis:
-        * Access to the application's source code.
-        * Access to the application's configuration.
-    * Inspection of the application's runtime environment in real-time.
-        * Direct access to the internals of the running application.
-        * Capture of full context upon detection of a vulnerable state.
-            * Stack-traces.
-            * Method arguments.
-            * Source codes.
-    * With special optimizations for:
-        * Rails (v3 and v4)
-        * Sinatra
-        * More to come...
-* Code coverage reporting
-    * See exactly how much of your codebase was covered by the scan.
-    * Examine per issue coverage data, to determine exactly which parts of your
-        code contributed to each logged issue.
+## Use
 
-## Installation
+### Options
 
-Add these lines to your application's Gemfile:
+| Option                  | Description                                                    | Default | Example       |
+|-------------------------|----------------------------------------------------------------|---------|---------------|
+| `path_start_with`       | Only instrument classes whose path starts with this prefix     | none | `example/`    |
+| `path_ends_with`        | Only instrument classes whose path ends with this suffix       | none | `app.rb`      |
+| `path_include_patterns` | Only instrument classes whose path matches all regex patterns  | none | `.*service.*` |
+| `path_exclude_patterns` | Exclude classes matching whose path matches any regex patterns | none | `.*test.*`    |
 
-    gem 'scnr-introspector'
+`app.rb`:
 
-And then execute:
+```ruby
+require 'scnr/introspector' # Include!
+require 'sinatra/base'
 
-    bundle
+class MyApp < Sinatra::Base
+    # Use!
+    use SCNR::Introspector, scope: {
+      path_start_with: __FILE__
+    }
 
-## Usage
+    def noop
+    end
 
-There are currently no user interfaces (CLI and WebUI are on the way), hence the
-only way to perform scans and retrieve results is via custom scripts.
+    def process_params( params )
+        noop
+        params.values.join( ' ' )
+    end
 
-For examples of such scripts please see the [Demos](#demos) section.
+    get '/' do
+        @instance_variable = {
+            blah: 'foo'
+        }
+        local_variable = 1
 
-### Caution
+        <<EOHTML
+        #{process_params( params )}
+        <a href="?v=stuff">XSS</a>
+EOHTML
+    end
 
-#### Code reloading and other tricks
+    run!
+end
+```
 
-Do not scan applications under their development environments as these usually
-enable development conveniences such as code-reloading which will severely increase
-scan times.
+## Verify
 
-It is best to scan applications under their optimal settings.
+Run the Web App:
 
-## Demos
+```bash
+bundle exec ruby examples/sinatra/app.rb
+```
 
-### Sinatra
+You should see this at the beginning:
 
-A demo Sinatra application can be found at `examples/sinatra/app.rb`, with a
-scanner script at `examples/sinatra/scanner.rb`.
+```
+[INTROSPECTOR] Codename SCNR Introspector Initialized.
+```
 
-    bundle exec ruby examples/sinatra/scanner.rb
+Along with these types of messages:
 
-### Rails
+```
+[INTROSPECTOR] Injecting trace code for MyApp#process_paramsin examples/sinatra/app.rb:12
+```
 
-A demo Rails application can be found at: `scnr-introspector-demo-rails`
+As an integration test, you can run:
 
-The scanner script can be found at: `scnr-introspector-demo-rails/bin/scnr-introspector.rb`
+```bash
+curl -i http://localhost:4567/ -H "X-Scnr-Engine-Scan-Seed:Test" -H "X-Scnr-Introspector-Trace:1" -H "X-SCNR-Request-ID:1"
+```
+
+You should see something like this (the comments are the important part):
+
+```html
+HTTP/1.1 200 OK
+Content-Type: text/html;charset=utf-8
+X-XSS-Protection: 1; mode=block
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+Content-Length: 7055
+
+
+<a href="?v=stuff">XSS</a>
+<!-- Test
+{"execution_flow":{"points":[{"path":"examples/sinatra/app.rb","line_number":17,"class_name":"MyApp","method_name":"GET /","event":"call","source":"    get '/' do\n","file_contents":"require 'scnr/introspector'\nrequire 'sinatra/base'\n\nclass MyApp < Sinatra::Base\n    use SCNR::Introspector, scope: {\n      path_start_with: __FILE__\n    }\n\n    def noop\n    end\n\n    def process_params( params )\n        noop\n        params.values.join( ' ' )\n    end\n\n    get '/' do\n        @instance_variable = {\n            blah: 'foo'\n        }\n        local_variable = 1\n\n        <<EOHTML\n        #{process_params( params )}\n        <a href=\"?v=stuff\">XSS</a>\nEOHTML\n    end\n\n    run!\nend\n"},{"path":"examples/sinatra/app.rb","line_number":19,"class_name":"MyApp","method_name":"GET /","event":"line","source":"            blah: 'foo'\n","file_contents":"require 'scnr/introspector'\nrequire 'sinatra/base'\n\nclass MyApp < Sinatra::Base\n    use SCNR::Introspector, scope: {\n      path_start_with: __FILE__\n    }\n\n    def noop\n    end\n\n    def process_params( params )\n        noop\n        params.values.join( ' ' )\n    end\n\n    get '/' do\n        @instance_variable = {\n            blah: 'foo'\n        }\n        local_variable = 1\n\n        <<EOHTML\n        #{process_params( params )}\n        <a href=\"?v=stuff\">XSS</a>\nEOHTML\n    end\n\n    run!\nend\n"},{"path":"examples/sinatra/app.rb","line_number":21,"class_name":"MyApp","method_name":"GET /","event":"line","source":"        local_variable = 1\n","file_contents":"require 'scnr/introspector'\nrequire 'sinatra/base'\n\nclass MyApp < Sinatra::Base\n    use SCNR::Introspector, scope: {\n      path_start_with: __FILE__\n    }\n\n    def noop\n    end\n\n    def process_params( params )\n        noop\n        params.values.join( ' ' )\n    end\n\n    get '/' do\n        @instance_variable = {\n            blah: 'foo'\n        }\n        local_variable = 1\n\n        <<EOHTML\n        #{process_params( params )}\n        <a href=\"?v=stuff\">XSS</a>\nEOHTML\n    end\n\n    run!\nend\n"},{"path":"examples/sinatra/app.rb","line_number":23,"class_name":"MyApp","method_name":"GET /","event":"line","source":"        <<EOHTML\n","file_contents":"require 'scnr/introspector'\nrequire 'sinatra/base'\n\nclass MyApp < Sinatra::Base\n    use SCNR::Introspector, scope: {\n      path_start_with: __FILE__\n    }\n\n    def noop\n    end\n\n    def process_params( params )\n        noop\n        params.values.join( ' ' )\n    end\n\n    get '/' do\n        @instance_variable = {\n            blah: 'foo'\n        }\n        local_variable = 1\n\n        <<EOHTML\n        #{process_params( params )}\n        <a href=\"?v=stuff\">XSS</a>\nEOHTML\n    end\n\n    run!\nend\n"},{"path":"examples/sinatra/app.rb","line_number":12,"class_name":"MyApp","method_name":"process_params","event":"call","source":"    def process_params( params )\n","file_contents":"require 'scnr/introspector'\nrequire 'sinatra/base'\n\nclass MyApp < Sinatra::Base\n    use SCNR::Introspector, scope: {\n      path_start_with: __FILE__\n    }\n\n    def noop\n    end\n\n    def process_params( params )\n        noop\n        params.values.join( ' ' )\n    end\n\n    get '/' do\n        @instance_variable = {\n            blah: 'foo'\n        }\n        local_variable = 1\n\n        <<EOHTML\n        #{process_params( params )}\n        <a href=\"?v=stuff\">XSS</a>\nEOHTML\n    end\n\n    run!\nend\n"},{"path":"examples/sinatra/app.rb","line_number":13,"class_name":"MyApp","method_name":"process_params","event":"line","source":"        noop\n","file_contents":"require 'scnr/introspector'\nrequire 'sinatra/base'\n\nclass MyApp < Sinatra::Base\n    use SCNR::Introspector, scope: {\n      path_start_with: __FILE__\n    }\n\n    def noop\n    end\n\n    def process_params( params )\n        noop\n        params.values.join( ' ' )\n    end\n\n    get '/' do\n        @instance_variable = {\n            blah: 'foo'\n        }\n        local_variable = 1\n\n        <<EOHTML\n        #{process_params( params )}\n        <a href=\"?v=stuff\">XSS</a>\nEOHTML\n    end\n\n    run!\nend\n"},{"path":"examples/sinatra/app.rb","line_number":9,"class_name":"MyApp","method_name":"noop","event":"call","source":"    def noop\n","file_contents":"require 'scnr/introspector'\nrequire 'sinatra/base'\n\nclass MyApp < Sinatra::Base\n    use SCNR::Introspector, scope: {\n      path_start_with: __FILE__\n    }\n\n    def noop\n    end\n\n    def process_params( params )\n        noop\n        params.values.join( ' ' )\n    end\n\n    get '/' do\n        @instance_variable = {\n            blah: 'foo'\n        }\n        local_variable = 1\n\n        <<EOHTML\n        #{process_params( params )}\n        <a href=\"?v=stuff\">XSS</a>\nEOHTML\n    end\n\n    run!\nend\n"},{"path":"examples/sinatra/app.rb","line_number":14,"class_name":"MyApp","method_name":"process_params","event":"line","source":"        params.values.join( ' ' )\n","file_contents":"require 'scnr/introspector'\nrequire 'sinatra/base'\n\nclass MyApp < Sinatra::Base\n    use SCNR::Introspector, scope: {\n      path_start_with: __FILE__\n    }\n\n    def noop\n    end\n\n    def process_params( params )\n        noop\n        params.values.join( ' ' )\n    end\n\n    get '/' do\n        @instance_variable = {\n            blah: 'foo'\n        }\n        local_variable = 1\n\n        <<EOHTML\n        #{process_params( params )}\n        <a href=\"?v=stuff\">XSS</a>\nEOHTML\n    end\n\n    run!\nend\n"},{"path":"examples/sinatra/app.rb","line_number":14,"class_name":"Hash","method_name":"values","event":"c_call","source":"        params.values.join( ' ' )\n","file_contents":"require 'scnr/introspector'\nrequire 'sinatra/base'\n\nclass MyApp < Sinatra::Base\n    use SCNR::Introspector, scope: {\n      path_start_with: __FILE__\n    }\n\n    def noop\n    end\n\n    def process_params( params )\n        noop\n        params.values.join( ' ' )\n    end\n\n    get '/' do\n        @instance_variable = {\n            blah: 'foo'\n        }\n        local_variable = 1\n\n        <<EOHTML\n        #{process_params( params )}\n        <a href=\"?v=stuff\">XSS</a>\nEOHTML\n    end\n\n    run!\nend\n"},{"path":"examples/sinatra/app.rb","line_number":14,"class_name":"Array","method_name":"join","event":"c_call","source":"        params.values.join( ' ' )\n","file_contents":"require 'scnr/introspector'\nrequire 'sinatra/base'\n\nclass MyApp < Sinatra::Base\n    use SCNR::Introspector, scope: {\n      path_start_with: __FILE__\n    }\n\n    def noop\n    end\n\n    def process_params( params )\n        noop\n        params.values.join( ' ' )\n    end\n\n    get '/' do\n        @instance_variable = {\n            blah: 'foo'\n        }\n        local_variable = 1\n\n        <<EOHTML\n        #{process_params( params )}\n        <a href=\"?v=stuff\">XSS</a>\nEOHTML\n    end\n\n    run!\nend\n"}]},"platforms":["ruby","linux"]}
+-->
+```
+
+## License
+
+All rights reserved Ecsypno Single Member P.C.

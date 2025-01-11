@@ -31,6 +31,13 @@ class Introspector
             method_source_location = object.allocate.method(m).source_location
             rnd = SecureRandom.hex(10)
 
+            msg = "[INTROSPECTOR] Injecting trace code for #{object}##{m}"
+            if method_source_location
+                msg << "in #{method_source_location.join(':')}"
+            end
+
+            puts msg
+
             ov = <<EORUBY
         module Overloads
         module #{object.to_s.split( '::' ).join}#{rnd}Overload
@@ -45,9 +52,9 @@ class Introspector
 EORUBY
             eval ov
         rescue => e
-            # puts ov
-            # pp e
-            # pp e.backtrace
+            puts ov
+            pp   e
+            pp e.backtrace
         end
 
         def taint_seed=( t )
@@ -167,6 +174,8 @@ EORUBY
     def initialize( app, options = {} )
         @app     = app
         @options = options
+
+        puts "[INTROSPECTOR] Codename SCNR Introspector Initialized."
 
         overload_application
         overload_rails if rails?
