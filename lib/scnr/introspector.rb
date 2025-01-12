@@ -33,7 +33,7 @@ class Introspector
 
             msg = "[INTROSPECTOR] Injecting trace code for #{object}##{m}"
             if method_source_location
-                msg << "in #{method_source_location.join(':')}"
+                msg << " in #{method_source_location.join(':')}"
             end
 
             puts msg
@@ -52,9 +52,9 @@ class Introspector
 EORUBY
             eval ov
         rescue => e
-            puts ov
-            pp   e
-            pp e.backtrace
+            # puts ov
+            # pp   e
+            # pp e.backtrace
         end
 
         def taint_seed=( t )
