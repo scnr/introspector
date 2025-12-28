@@ -34,7 +34,7 @@ class Sink
             filepath = @method_source_location.first
             lineno   = @method_source_location.last
 
-            if File.exists? filepath
+            if File.exist? filepath
                 File.open filepath do |f|
                     begin
                         @method_source = MyMethodSource::CodeHelpers.expression_at( File.open( f ), lineno )
@@ -46,7 +46,7 @@ class Sink
 
         if !@source && @backtrace
             source_location = @backtrace.first.split( ':' ).first
-            if File.exists? source_location
+            if File.exist? source_location
                 @source = IO.read( source_location )
             end
         end

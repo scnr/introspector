@@ -1,5 +1,8 @@
 source 'https://rubygems.org'
 
+gem 'rackup'
+gem 'puma'
+
 group :docs do
     gem 'yard'
     gem 'redcarpet'
