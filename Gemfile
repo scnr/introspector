@@ -1,5 +1,11 @@
 source 'https://rubygems.org'
 
+# gem'bundler'
+# gem 'rake'
+# gem 'puma'
+# gem 'sinatra'
+# gem 'sinatra-contrib'
+
 gem 'rackup'
 gem 'puma'
 
